@@ -1,12 +1,11 @@
 import asyncio
 import logging
-from typing import cast
 import dacite
 import sys
 import yaml
+
 from src.bot_structures import RemoteServer
 from src.client_runner import run_client
-
 from src.config import Config
 from src.coordinator_protocol import CoordinatorProtocol
 from src.game_protocol import GameProtocol
