@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Server:
-    server_host: str
+    server_host: Optional[str]
+    invite_code: Optional[str]
     player_name: str
     company_id: int
     company_name: Optional[str]
@@ -16,6 +17,9 @@ class Server:
     company_password: Optional[str]
 
     def __post_init__(self) -> None:
+        if (self.server_host == None) == (self.invite_code == None):
+            raise ValueError(
+                "Only one of [server_host, invite_code] must be set")
         if not 1 <= self.company_id <= 15:
             raise ValueError("company_id must be between 1 and 15")
         if self.company_name is not None:
@@ -46,10 +50,13 @@ class Ottd:
     revision_major: Optional[int]
     revision_minor: Optional[int]
     revision_stable: bool
+    coordinator_host: str
+    coordinator_port: int
 
     def __post_init__(self) -> None:
         if (self.revision_major == None) != (self.revision_minor == None):
-            raise ValueError("revision_major & revision_minor must either both be set or both be unset")
+            raise ValueError(
+                "revision_major & revision_minor must either both be set or both be unset")
 
 
 @dataclass

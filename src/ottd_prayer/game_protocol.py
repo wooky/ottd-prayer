@@ -1,10 +1,11 @@
 import enum
-from typing import Any, Callable, Coroutine, ParamSpec, cast
-from openttd_protocol.wire.exceptions import PacketInvalidData, PacketTooShort
+from openttd_protocol.wire.exceptions import PacketTooShort
 from openttd_protocol.wire.read import read_uint8, read_uint16, read_uint32, read_uint64, read_string, read_bytes
 from openttd_protocol.wire.source import Source
 from openttd_protocol.wire.tcp import TCPProtocol
-from openttd_protocol.wire.write import write_init, write_presend, write_uint8, write_uint32, write_string, SEND_TCP_MTU
+from openttd_protocol.wire.write import write_init, write_uint8, write_uint32, write_string
+
+from .decorators import Receive, data_consumer, data_producer
 from .bot_structures import PlayerMovement, ServerError, ServerFrame, ServerProperties
 
 
@@ -58,32 +59,9 @@ class PacketGameType(enum.IntEnum):
     PACKET_END = 46
 
 
-P = ParamSpec('P')
-Receive = tuple[dict[str, Any], memoryview]
-
-
 class GameProtocol(TCPProtocol):
     PacketType = PacketGameType
     PACKET_END = PacketGameType.PACKET_END
-
-    @staticmethod
-    def data_consumer(func: Callable[[Source, memoryview], Receive]) -> Callable[..., dict[str, Any]]:
-        def wrapper_data_consumer(source: Source, data: memoryview) -> dict[str, Any]:
-            result, data = func(source, data)
-            if len(data) != 0:
-                raise PacketInvalidData(
-                    "more bytes than expected in ", func.__name__, "; remaining: ", len(data))
-            return result
-        return wrapper_data_consumer
-
-    @staticmethod
-    def data_producer(func: Callable[P, bytearray]) -> Callable[P, Coroutine[Any, Any, None]]:
-        async def wrapper_data_producer(*args: P.args, **kwargs: P.kwargs) -> None:
-            self = cast(GameProtocol, args[0])
-            data = func(*args, **kwargs)
-            write_presend(data, SEND_TCP_MTU)
-            await self.send_packet(data)
-        return wrapper_data_producer
 
     ### RECEIVERS ###
 

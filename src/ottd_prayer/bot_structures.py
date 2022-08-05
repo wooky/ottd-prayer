@@ -23,8 +23,15 @@ class PlayerMovement:
     client_id: ClientId
     company_id: CompanyId
 
+
 @dataclass
 class ServerFrame:
     frame_counter_server: int
     frame_counter_max: int
     token: Optional[int]
+
+
+@dataclass
+class RemoteServer:
+    host: str
+    port: int

@@ -1,5 +1,6 @@
 server:
-  server_host: # REQUIRED
+  server_host: # either this or invite_code is REQUIRED
+  invite_code: # either this or server_host is REQUIRED
   player_name: # REQUIRED
   company_id: # REQUIRED
   company_name: # NOT IMPLEMENTED
@@ -39,3 +40,5 @@ ottd:
   revision_major: # default: derived from network_revision
   revision_minor: # default: derived from network_revision
   revision_stable: true
+  coordinator_host: coordinator.openttd.org
+  coordinator_port: 3976
