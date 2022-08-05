@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, cast
+from typing import Any, Optional, cast
 from dacite import from_dict
 from hashlib import md5
 from openttd_protocol.wire.source import Source
@@ -24,6 +24,7 @@ class PrayerBot:
         self.server_properties: ServerProperties
         self.frame_counter: int
         self.target_company_id: CompanyId = config.server.company_id - 1  # TODO
+        self.company_move_task: Optional[asyncio.Task[None]] = None
         self.was_game_password_sent: bool = False
         self.was_company_password_sent: bool = False
         self.ready_to_play: bool = False
@@ -38,7 +39,8 @@ class PrayerBot:
         self.protocol = protocol
 
         try:
-            self.ban_check_task = asyncio.create_task(self._wait_for_ban())
+            logger.debug("Waiting to confirm the bot didn't get banned")
+            self.ban_check_task = asyncio.create_task(asyncio.sleep(1))
             await self.ban_check_task
         except asyncio.CancelledError:
             # bail!
@@ -152,7 +154,7 @@ class PrayerBot:
         logger.debug("Received PACKET_SERVER_EXTERNAL_CHAT")
 
     async def receive_PACKET_SERVER_MOVE(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug("Received PACKET_SERVER_MOVE")
+        logger.debug("Received PACKET_SERVER_MOVE: %s", kwargs)
         player_movement = from_dict(data_class=PlayerMovement, data=kwargs)
 
         await self._do_player_movement(player_movement.client_id, player_movement.company_id)
@@ -188,6 +190,8 @@ class PrayerBot:
     def _reconnect_if(self, condition: bool) -> None:
         self.should_reconnect = condition
         self.ban_check_task.cancel()
+        if self.company_move_task is not None:
+            self.company_move_task.cancel()
         self.protocol.task.cancel()
 
     # GenerateCompanyPasswordHash from src/network/network.cpp
@@ -231,10 +235,18 @@ class PrayerBot:
                 await self.protocol.send_PACKET_CLIENT_MOVE(COMPANY_SPECTATOR, "")
 
     async def _try_joining_company(self) -> None:
-        if self.ready_to_play and not self.is_playing and (not self.config.bot.spectate_if_alone or len(self.other_clients_playing) > 0):
-            # TODO check if move was successful
-            await self.protocol.send_PACKET_CLIENT_MOVE(self.target_company_id, self._company_password_hash())
+        if self.ready_to_play:
+            if self.is_playing:
+                # Client was moved, so cancel checking task
+                if self.company_move_task is not None:
+                    self.company_move_task.cancel()
+                    self.company_move_task = None
+            elif (self.company_move_task is None or self.company_move_task.done()) and (not self.config.bot.spectate_if_alone or len(self.other_clients_playing) > 0):
+                await self.protocol.send_PACKET_CLIENT_MOVE(self.target_company_id, self._company_password_hash())
+                self.company_move_task = asyncio.create_task(self._wait_for_move_or_disconnect())
 
-    async def _wait_for_ban(self) -> None:
-        logger.debug("Waiting to confirm the bot didn't get banned")
+    async def _wait_for_move_or_disconnect(self) -> None:
+        logger.debug("Waiting to confirm if the move was successful")
         await asyncio.sleep(1)
+        logger.error("Bot was not moved to the requested company")
+        self._reconnect_if(self.config.bot.auto_reconnect_if_cannot_move)
