@@ -1,5 +1,6 @@
+import asyncio
 import logging
-from typing import Any, Optional, cast
+from typing import Any, cast
 from dacite import from_dict
 from hashlib import md5
 from openttd_protocol.wire.source import Source
@@ -19,6 +20,7 @@ class PrayerBot:
         self.config = config
 
         self.protocol: GameProtocol
+        self.ban_check_task: asyncio.Task[None]
         self.server_properties: ServerProperties
         self.frame_counter: int
         self.target_company_id: CompanyId = config.server.company_id - 1  # TODO
@@ -32,9 +34,17 @@ class PrayerBot:
         self.should_reconnect: bool = config.bot.auto_reconnect
 
     async def set_protocol_and_join(self, protocol: GameProtocol) -> None:
-        logger.debug("Setting protocol and joining")
+        logger.debug("Setting protocol")
         self.protocol = protocol
 
+        try:
+            self.ban_check_task = asyncio.create_task(self._wait_for_ban())
+            await self.ban_check_task
+        except asyncio.CancelledError:
+            # bail!
+            return
+
+        logger.debug("Joining remote server")
         if self.config.ottd.revision_major == None or self.config.ottd.revision_minor == None:
             (revision_major, revision_minor) = map(
                 int, self.config.ottd.network_revision.split('.'))
@@ -177,6 +187,7 @@ class PrayerBot:
 
     def _reconnect_if(self, condition: bool) -> None:
         self.should_reconnect = condition
+        self.ban_check_task.cancel()
         self.protocol.task.cancel()
 
     # GenerateCompanyPasswordHash from src/network/network.cpp
@@ -223,3 +234,7 @@ class PrayerBot:
         if self.ready_to_play and not self.is_playing and (not self.config.bot.spectate_if_alone or len(self.other_clients_playing) > 0):
             # TODO check if move was successful
             await self.protocol.send_PACKET_CLIENT_MOVE(self.target_company_id, self._company_password_hash())
+
+    async def _wait_for_ban(self) -> None:
+        logger.debug("Waiting to confirm the bot didn't get banned")
+        await asyncio.sleep(1)
