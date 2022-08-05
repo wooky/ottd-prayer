@@ -40,8 +40,8 @@ class Bot:
     def __post_init__(self) -> None:
         if self.auto_reconnect_wait <= 0:
             raise ValueError("auto_reconnect_wait must be greater than 0")
-        if self.reconnect_count < 0:
-            raise ValueError("reconnect_value must be at least 0")
+        if self.reconnect_count <= 0:
+            raise ValueError("reconnect_value must be greater than 0")
 
 
 @dataclass

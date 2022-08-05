@@ -8,9 +8,8 @@ from src.bot_structures import RemoteServer
 from src.client_runner import run_client
 from src.config import Config
 from src.coordinator_protocol import CoordinatorProtocol
-from src.game_protocol import GameProtocol
 from src.ip_finder import IpFinder
-from src.prayer_bot import PrayerBot
+from src.server_connector import connect_to_server
 
 
 async def main(filename: str) -> None:
@@ -37,13 +36,7 @@ async def main(filename: str) -> None:
             raise Exception("Remote server was not set")
         remote_server = ip_finder.remote_server
 
-    await run_client(
-        loop,
-        remote_server,
-        PrayerBot(config),
-        GameProtocol,
-        PrayerBot.set_protocol_and_join
-    )
+    await connect_to_server(config, loop, remote_server)
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

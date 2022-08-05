@@ -29,6 +29,7 @@ class PrayerBot:
         self.other_clients_playing: set[ClientId] = set()
         self.token: int = 0
         self.last_ack_frame: int = 0
+        self.should_reconnect: bool = config.bot.auto_reconnect
 
     async def set_protocol_and_join(self, protocol: GameProtocol) -> None:
         logger.debug("Setting protocol and joining")
@@ -175,7 +176,8 @@ class PrayerBot:
     ### PRIVATE METHODS ###
 
     def _reconnect_if(self, condition: bool) -> None:
-        pass
+        self.should_reconnect = condition
+        self.protocol.task.cancel()
 
     # GenerateCompanyPasswordHash from src/network/network.cpp
     def _company_password_hash(self) -> str:
