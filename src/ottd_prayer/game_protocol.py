@@ -218,7 +218,8 @@ class GameProtocol(TCPProtocol):
     @staticmethod
     @data_consumer
     def receive_PACKET_SERVER_COMPANY_UPDATE(source: Source, data: memoryview) -> Receive:
-        _, data = read_uint16(data)  # network company passworded???
+        _, data = read_uint16(data)  # network company passworded
+        # This is a bitmask of companies which have a password set.
 
         return {}, data
 

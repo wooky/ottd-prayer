@@ -169,7 +169,7 @@ class PrayerBot:
         await self._do_player_movement(player_movement.client_id, player_movement.company_id)
 
     async def receive_PACKET_SERVER_COMPANY_UPDATE(self, source: Source) -> None:
-        logger.warning("Company password has been changed")
+        logger.debug("Received PACKET_SERVER_COMPANY_UPDATE")
 
     async def receive_PACKET_SERVER_CONFIG_UPDATE(self, source: Source) -> None:
         logger.debug("Received PACKET_SERVER_CONFIG_UPDATE")
