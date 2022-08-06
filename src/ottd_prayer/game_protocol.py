@@ -1,7 +1,6 @@
 import enum
 from openttd_protocol.wire.exceptions import PacketTooShort
 from openttd_protocol.wire.read import read_uint8, read_uint16, read_uint32, read_uint64, read_string, read_bytes
-from openttd_protocol.wire.source import Source
 from openttd_protocol.wire.tcp import TCPProtocol
 from openttd_protocol.wire.write import write_init, write_uint8, write_uint32, write_string
 
@@ -67,17 +66,17 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_FULL(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_FULL(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_BANNED(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_BANNED(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_ERROR(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_ERROR(data: memoryview) -> Receive:
         error_code, data = read_uint8(data)
         try:
             error_str, data = read_string(data)
@@ -88,7 +87,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_CHECK_NEWGRFS(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_CHECK_NEWGRFS(data: memoryview) -> Receive:
         # yeet the data out of the window
         data = memoryview(bytes())
 
@@ -96,12 +95,12 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_NEED_GAME_PASSWORD(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_NEED_GAME_PASSWORD(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_WELCOME(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_WELCOME(data: memoryview) -> Receive:
         client_id, data = read_uint32(data)
         game_seed, data = read_uint32(data)
         server_id, data = read_string(data)
@@ -110,7 +109,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_CLIENT_INFO(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_CLIENT_INFO(data: memoryview) -> Receive:
         client_id, data = read_uint32(data)
         playas, data = read_uint8(data)
         _, data = read_string(data)  # name
@@ -119,28 +118,28 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_WAIT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_WAIT(data: memoryview) -> Receive:
         _, data = read_uint8(data)  # waiting
 
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_MAP_BEGIN(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_MAP_BEGIN(data: memoryview) -> Receive:
         frame, data = read_uint32(data)
 
         return {"frame": frame}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_MAP_SIZE(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_MAP_SIZE(data: memoryview) -> Receive:
         _, data = read_uint32(data)  # bytes total
 
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_MAP_DATA(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_MAP_DATA(data: memoryview) -> Receive:
         # yeet the data out of the window
         data = memoryview(bytes())
 
@@ -148,19 +147,19 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_MAP_DONE(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_MAP_DONE(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_JOIN(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_JOIN(data: memoryview) -> Receive:
         _, data = read_uint32(data)  # client ID
 
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_FRAME(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_FRAME(data: memoryview) -> Receive:
         frame_counter_server, data = read_uint32(data)
         frame_counter_max, data = read_uint32(data)
         try:
@@ -172,7 +171,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_SYNC(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_SYNC(data: memoryview) -> Receive:
         _, data = read_uint32(data)  # sync frame
         _, data = read_uint32(data)  # sync seed 1
 
@@ -180,7 +179,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_COMMAND(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_COMMAND(data: memoryview) -> Receive:
         # yeet the data out of the window
         data = memoryview(bytes())
 
@@ -188,7 +187,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_CHAT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_CHAT(data: memoryview) -> Receive:
         _, data = read_uint8(data)  # action
         _, data = read_uint32(data)  # client ID
         _, data = read_bytes(data, 1)  # self send
@@ -199,7 +198,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_EXTERNAL_CHAT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_EXTERNAL_CHAT(data: memoryview) -> Receive:
         _, data = read_string(data)  # source
         _, data = read_uint16(data)  # color
         _, data = read_string(data)  # user
@@ -209,7 +208,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_MOVE(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_MOVE(data: memoryview) -> Receive:
         client_id, data = read_uint32(data)  # client ID
         company_id, data = read_uint8(data)  # company ID
 
@@ -217,7 +216,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_COMPANY_UPDATE(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_COMPANY_UPDATE(data: memoryview) -> Receive:
         _, data = read_uint16(data)  # network company passworded
         # This is a bitmask of companies which have a password set.
 
@@ -225,7 +224,7 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_CONFIG_UPDATE(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_CONFIG_UPDATE(data: memoryview) -> Receive:
         _, data = read_uint8(data)  # max companies
         _, data = read_string(data)  # server name
 
@@ -233,24 +232,24 @@ class GameProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_NEWGAME(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_NEWGAME(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_SHUTDOWN(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_SHUTDOWN(data: memoryview) -> Receive:
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_QUIT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_QUIT(data: memoryview) -> Receive:
         client_id, data = read_uint32(data)
 
         return {"client_id": client_id}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_SERVER_ERROR_QUIT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_SERVER_ERROR_QUIT(data: memoryview) -> Receive:
         client_id, data = read_uint32(data)
         _, data = read_uint8(data)  # error code
 

@@ -3,11 +3,11 @@ import logging
 from typing import Any, Optional, cast
 from dacite import from_dict
 from hashlib import md5
-from openttd_protocol.wire.source import Source
 
-from .game_protocol import GameProtocol
 from .bot_structures import ClientId, CompanyId, NetworkErrorCode, PlayerMovement, ServerError, ServerFrame, ServerProperties
 from .config import Config
+from .decorators import app_consumer
+from .game_protocol import GameProtocol
 
 logger = logging.getLogger(__name__)
 MAX_COMPANIES = 0x0F
@@ -59,15 +59,18 @@ class PrayerBot:
 
     ### CALLED BY TCPPROTOCOL ###
 
-    async def receive_PACKET_SERVER_FULL(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_FULL(self) -> None:
         logger.warning("Server is full")
         self._reconnect_if(self.config.bot.auto_reconnect)
 
-    async def receive_PACKET_SERVER_BANNED(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_BANNED(self) -> None:
         logger.warning("Bot is banned")
         self._reconnect_if(self.config.bot.auto_reconnect_if_banned)
 
-    async def receive_PACKET_SERVER_ERROR(self, source: Source, **kwargs: dict[str, Any]) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_ERROR(self, **kwargs: dict[str, Any]) -> None:
         server_error = from_dict(data_class=ServerError, data=kwargs)
         if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
             error_code_str = str(NetworkErrorCode(server_error.error_code))
@@ -83,12 +86,12 @@ class PrayerBot:
         else:
             self._reconnect_if(self.config.bot.auto_reconnect)
 
-    async def receive_PACKET_SERVER_CHECK_NEWGRFS(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_CHECK_NEWGRFS")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_CHECK_NEWGRFS(self) -> None:
         await self.protocol.send_PACKET_CLIENT_NEWGRFS_CHECKED()
 
-    async def receive_PACKET_SERVER_NEED_GAME_PASSWORD(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_NEED_GAME_PASSWORD")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_NEED_GAME_PASSWORD(self) -> None:
         server_password = self.config.server.server_password
         if server_password == None:
             logger.error("Server password was not set")
@@ -99,43 +102,47 @@ class PrayerBot:
 
         await self.protocol.send_PACKET_CLIENT_GAME_PASSWORD(server_password)
 
-    async def receive_PACKET_SERVER_WELCOME(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug("Received PACKET_SERVER_WELCOME: %s", kwargs)
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_WELCOME(self, **kwargs: dict[str, Any]) -> None:
         self.server_properties = from_dict(
             data_class=ServerProperties, data=kwargs)
 
         await self.protocol.send_PACKET_CLIENT_GETMAP()
 
-    async def receive_PACKET_SERVER_CLIENT_INFO(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug("Received PACKET_SERVER_CLIENT_INFO: %s", kwargs)
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_CLIENT_INFO(self, **kwargs: dict[str, Any]) -> None:
         player_movement = from_dict(data_class=PlayerMovement, data=kwargs)
 
         await self._do_player_movement(player_movement.client_id, player_movement.company_id)
 
-    async def receive_PACKET_SERVER_WAIT(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_WAIT")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_WAIT(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_MAP_BEGIN(self, source: Source, frame: int) -> None:
-        logger.debug("Received PACKET_SERVER_MAP_BEGIN")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_MAP_BEGIN(self, frame: int) -> None:
         self.frame_counter = frame
 
-    async def receive_PACKET_SERVER_MAP_SIZE(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_MAP_SIZE")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_MAP_SIZE(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_MAP_DATA(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_MAP_DATA")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_MAP_DATA(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_MAP_DONE(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_MAP_DONE")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_MAP_DONE(self) -> None:
         self.ready_to_play = True
         await self.protocol.send_PACKET_CLIENT_MAP_OK()
         # await self._try_joining_company()
 
-    async def receive_PACKET_SERVER_JOIN(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_JOIN")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_JOIN(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_FRAME(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug("Received PACKET_SERVER_FRAME: %s", kwargs)
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_FRAME(self, **kwargs: dict[str, Any]) -> None:
         server_frame = from_dict(data_class=ServerFrame, data=kwargs)
 
         if server_frame.token != None:
@@ -150,46 +157,54 @@ class PrayerBot:
             self.last_ack_frame = self.frame_counter + DAY_TICKS
             await self.protocol.send_PACKET_CLIENT_ACK(self.frame_counter, self.token)
 
-    async def receive_PACKET_SERVER_SYNC(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_SYNC")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_SYNC(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_COMMAND(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_COMMAND")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_COMMAND(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_CHAT(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_CHAT")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_CHAT(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_EXTERNAL_CHAT(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_EXTERNAL_CHAT")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_EXTERNAL_CHAT(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_MOVE(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug("Received PACKET_SERVER_MOVE: %s", kwargs)
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_MOVE(self, **kwargs: dict[str, Any]) -> None:
         player_movement = from_dict(data_class=PlayerMovement, data=kwargs)
 
         await self._do_player_movement(player_movement.client_id, player_movement.company_id)
 
-    async def receive_PACKET_SERVER_COMPANY_UPDATE(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_COMPANY_UPDATE")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_COMPANY_UPDATE(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_CONFIG_UPDATE(self, source: Source) -> None:
-        logger.debug("Received PACKET_SERVER_CONFIG_UPDATE")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_CONFIG_UPDATE(self) -> None:
+        pass
 
-    async def receive_PACKET_SERVER_NEWGAME(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_NEWGAME(self) -> None:
         logger.warning("Server is about to restart")
         self._reconnect_if(self.config.bot.auto_reconnect_if_restarting)
 
-    async def receive_PACKET_SERVER_SHUTDOWN(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_SHUTDOWN(self) -> None:
         logger.warning("Server is shutting down")
         self._reconnect_if(self.config.bot.auto_reconnect_if_shutdown)
 
-    async def receive_PACKET_SERVER_QUIT(self, source: Source, client_id: ClientId) -> None:
-        logger.debug("Received PACKET_SERVER_QUIT")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_QUIT(self, client_id: ClientId) -> None:
         assert client_id != self.server_properties.client_id
 
         await self._do_player_movement(client_id, COMPANY_SPECTATOR)
 
-    async def receive_PACKET_SERVER_ERROR_QUIT(self, source: Source, client_id: ClientId) -> None:
-        logger.debug("Received PACKET_SERVER_ERROR_QUIT")
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_ERROR_QUIT(self, client_id: ClientId) -> None:
         assert client_id != self.server_properties.client_id
 
         await self._do_player_movement(client_id, COMPANY_SPECTATOR)

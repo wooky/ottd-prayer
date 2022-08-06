@@ -1,11 +1,11 @@
 import logging
 from dacite import from_dict
-from openttd_protocol.wire.source import Source
 from typing import Any, Optional, cast
 
 from .bot_structures import RemoteServer, ServerError
 from .config import Config
 from .coordinator_protocol import CoordinatorProtocol
+from .decorators import app_consumer
 
 logger = logging.getLogger(__name__)
 
@@ -24,25 +24,28 @@ class IpFinder:
 
     ### CALLED BY TCPPROTOCOL ###
 
-    async def receive_PACKET_COORDINATOR_GC_ERROR(self, source: Source, **kwargs: dict[str, Any]) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_COORDINATOR_GC_ERROR(self, **kwargs: dict[str, Any]) -> None:
         server_error = from_dict(data_class=ServerError, data=kwargs)
         logger.error("Received server error %d: %s",
                      server_error.error_code, server_error.error_str)
         raise Exception("Cannot retrieve server IP")
 
-    async def receive_PACKET_COORDINATOR_GC_CONNECTING(self, source: Source) -> None:
-        logger.debug("Received PACKET_COORDINATOR_GC_CONNECTING")
+    @app_consumer(logger)
+    async def receive_PACKET_COORDINATOR_GC_CONNECTING(self) -> None:
+        pass
 
-    async def receive_PACKET_COORDINATOR_GC_CONNECT_FAILED(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_COORDINATOR_GC_CONNECT_FAILED(self) -> None:
         raise Exception("Cannot retrieve server IP")
 
-    async def receive_PACKET_COORDINATOR_GC_DIRECT_CONNECT(self, source: Source, **kwargs: dict[str, Any]) -> None:
-        logger.debug(
-            "Received PACKET_COORDINATOR_GC_DIRECT_CONNECT: %s", kwargs)
+    @app_consumer(logger)
+    async def receive_PACKET_COORDINATOR_GC_DIRECT_CONNECT(self, **kwargs: dict[str, Any]) -> None:
         self.remote_server = from_dict(data_class=RemoteServer, data=kwargs)
 
         self.protocol.task.cancel()
 
-    async def receive_PACKET_COORDINATOR_GC_STUN_REQUEST(self, source: Source) -> None:
+    @app_consumer(logger)
+    async def receive_PACKET_COORDINATOR_GC_STUN_REQUEST(self) -> None:
         logger.error("NOT IMPLEMENTED: cannot make STUN request")
         raise Exception("Cannot retrieve server IP")

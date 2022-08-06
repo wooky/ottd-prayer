@@ -1,6 +1,5 @@
 from openttd_protocol.protocol.coordinator import PacketCoordinatorType
 from openttd_protocol.wire.read import read_string, read_uint8, read_uint16
-from openttd_protocol.wire.source import Source
 from openttd_protocol.wire.tcp import TCPProtocol
 from openttd_protocol.wire.write import write_init, write_string, write_uint8
 
@@ -18,7 +17,7 @@ class CoordinatorProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_COORDINATOR_GC_ERROR(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_COORDINATOR_GC_ERROR(data: memoryview) -> Receive:
         error_code, data = read_uint8(data)
         error_str, data = read_string(data)
 
@@ -26,7 +25,7 @@ class CoordinatorProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_COORDINATOR_GC_CONNECTING(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_COORDINATOR_GC_CONNECTING(data: memoryview) -> Receive:
         _, data = read_string(data)  # token
         _, data = read_string(data)  # invite token
 
@@ -34,14 +33,14 @@ class CoordinatorProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_COORDINATOR_GC_CONNECT_FAILED(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_COORDINATOR_GC_CONNECT_FAILED(data: memoryview) -> Receive:
         _, data = read_string(data)  # token
 
         return {}, data
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_COORDINATOR_GC_DIRECT_CONNECT(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_COORDINATOR_GC_DIRECT_CONNECT(data: memoryview) -> Receive:
         _, data = read_string(data)  # token
         _, data = read_uint8(data)  # tracking number
         host, data = read_string(data)
@@ -51,7 +50,7 @@ class CoordinatorProtocol(TCPProtocol):
 
     @staticmethod
     @data_consumer
-    def receive_PACKET_COORDINATOR_GC_STUN_REQUEST(source: Source, data: memoryview) -> Receive:
+    def receive_PACKET_COORDINATOR_GC_STUN_REQUEST(data: memoryview) -> Receive:
         _, data = read_string(data)  # token
 
         return {}, data
