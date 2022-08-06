@@ -6,7 +6,7 @@ from hashlib import md5
 from openttd_protocol.wire.source import Source
 
 from .game_protocol import GameProtocol
-from .bot_structures import ClientId, CompanyId, PlayerMovement, ServerError, ServerFrame, ServerProperties
+from .bot_structures import ClientId, CompanyId, NetworkErrorCode, PlayerMovement, ServerError, ServerFrame, ServerProperties
 from .config import Config
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ class PrayerBot:
         self.target_company_id: CompanyId = config.server.company_id - 1  # TODO
         self.company_move_task: Optional[asyncio.Task[None]] = None
         self.was_game_password_sent: bool = False
-        self.was_company_password_sent: bool = False
         self.ready_to_play: bool = False
         self.is_playing: bool = False
         self.other_clients_playing: set[ClientId] = set()
@@ -70,9 +69,19 @@ class PrayerBot:
 
     async def receive_PACKET_SERVER_ERROR(self, source: Source, **kwargs: dict[str, Any]) -> None:
         server_error = from_dict(data_class=ServerError, data=kwargs)
-        logger.error("Received server error %d: %s",
-                     server_error.error_code, server_error.error_str)
-        self._reconnect_if(self.config.bot.auto_reconnect)
+        if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
+            error_code_str = str(NetworkErrorCode(server_error.error_code))
+        else:
+            error_code_str = "INVALID"
+        logger.error("Received server error %d (%s): %s",
+                     server_error.error_code, error_code_str, server_error.error_str)
+
+        if server_error.error_code == NetworkErrorCode.NETWORK_ERROR_WRONG_PASSWORD:
+            logger.error("Incorrect game password")
+            self._reconnect_if(
+                self.config.bot.auto_reconnect_if_wrong_game_password)
+        else:
+            self._reconnect_if(self.config.bot.auto_reconnect)
 
     async def receive_PACKET_SERVER_CHECK_NEWGRFS(self, source: Source) -> None:
         logger.debug("Received PACKET_SERVER_CHECK_NEWGRFS")
@@ -80,12 +89,12 @@ class PrayerBot:
 
     async def receive_PACKET_SERVER_NEED_GAME_PASSWORD(self, source: Source) -> None:
         logger.debug("Received PACKET_SERVER_NEED_GAME_PASSWORD")
-        if self.was_game_password_sent:
-            raise RuntimeError("Incorrect game password")
-
         server_password = self.config.server.server_password
         if server_password == None:
-            raise RuntimeError("Server password was not set")
+            logger.error("Server password was not set")
+            self._reconnect_if(
+                self.config.bot.auto_reconnect_if_wrong_game_password)
+            return
         assert server_password is not None  # otherwise mypy complains for whatever reason
 
         await self.protocol.send_PACKET_CLIENT_GAME_PASSWORD(server_password)
@@ -243,7 +252,8 @@ class PrayerBot:
                     self.company_move_task = None
             elif (self.company_move_task is None or self.company_move_task.done()) and (not self.config.bot.spectate_if_alone or len(self.other_clients_playing) > 0):
                 await self.protocol.send_PACKET_CLIENT_MOVE(self.target_company_id, self._company_password_hash())
-                self.company_move_task = asyncio.create_task(self._wait_for_move_or_disconnect())
+                self.company_move_task = asyncio.create_task(
+                    self._wait_for_move_or_disconnect())
 
     async def _wait_for_move_or_disconnect(self) -> None:
         logger.debug("Waiting to confirm if the move was successful")

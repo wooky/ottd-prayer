@@ -32,6 +32,7 @@ class Bot:
     auto_reconnect: bool
     auto_reconnect_wait: int
     reconnect_count: int
+    auto_reconnect_if_wrong_game_password: bool
     auto_reconnect_if_cannot_move: bool
     auto_reconnect_if_shutdown: bool
     auto_reconnect_if_banned: bool

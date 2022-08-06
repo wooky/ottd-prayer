@@ -22,6 +22,9 @@ bot:
   # How many times to try to reconnect before giving up and exiting.
   reconnect_count: 3
 
+  # Should the bot reconnect if the game password is incorrect?
+  auto_reconnect_if_wrong_game_password: false
+
   # Should the bot reconnect if it can't move to the specified company?
   # This can happen if the company does not exist, or password is incorrect.
   auto_reconnect_if_cannot_move: false
