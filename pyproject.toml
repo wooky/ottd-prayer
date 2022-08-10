@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "ottd_prayer"
 version = "0.0.0"
 description = "AFK bot for OpenTTD"
-#readme = "README.md"
-#license = { file="LICENSE" }
+readme = "README.md"
+license = { file="LICENSE" }
 requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
-  # "License :: OSI Approved :: MIT License",
-  # "Operating System :: OS Independent",
+  "License :: OSI Approved :: The Unlicense (Unlicense)",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
   "dacite",
@@ -25,9 +25,12 @@ dependencies = [
 "Bug Tracker" = "https://github.com/wooky/ottd-prayer/issues"
 
 [project.optional-dependencies]
-ci = ["black", "isort", "mypy"]
+ci = ["black", "isort", "mypy", "types-PyYAML"]
 build = ["pyinstaller"]
 dev = ["ottd_prayer[ci]", "ottd_prayer[build]"]
 
 [project.scripts]
 ottd-prayer = "ottd_prayer.main:main"
+
+[tool.isort]
+profile = "black"
