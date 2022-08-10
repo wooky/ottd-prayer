@@ -1,4 +1,7 @@
 .venv/
+build/
+dist/
 out/
 __pycache__/
+src/ottd_prayer.egg-info/
 bot.yaml

@@ -5,15 +5,15 @@ import sys
 import dacite
 import yaml
 
-from src.bot_structures import RemoteServer
-from src.client_runner import run_client
-from src.config import Config
-from src.coordinator_protocol import CoordinatorProtocol
-from src.ip_finder import IpFinder
-from src.server_connector import connect_to_server
+from .bot_structures import RemoteServer
+from .client_runner import run_client
+from .config import Config
+from .coordinator_protocol import CoordinatorProtocol
+from .ip_finder import IpFinder
+from .server_connector import connect_to_server
 
 
-async def main(filename: str) -> None:
+async def main_async(filename: str) -> None:
     with open(filename) as f:
         config = dacite.from_dict(data_class=Config, data=yaml.safe_load(f))
 
@@ -40,9 +40,9 @@ async def main(filename: str) -> None:
     await connect_to_server(config, loop, remote_server)
 
 
-if __name__ == "__main__":
+def main() -> None:
     if len(sys.argv) != 2:
         print("Usage:", sys.argv[0], "[config file]")
         sys.exit(1)
 
-    asyncio.run(main(sys.argv[1]))
+    asyncio.run(main_async(sys.argv[1]))
