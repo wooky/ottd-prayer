@@ -65,3 +65,13 @@ black src/ottd_prayer
 isort src/ottd_prayer
 mypy
 ```
+
+## Miscellaneous
+
+> Why was this bot created?
+
+Company autocleaning is a feature used on a lot of servers to make room for new companies by removing stale companies. While it works well enough for removing abandoned companies, extreme care needs to be taken when setting the autoclean timeout. Unfortunately, there are servers out there that sets a ridiculously low timeout, like 1 hour. This is the purpose of this bot, to make sure that your company won't get nuked so quickly.
+
+> Why is it called ottd-prayer?
+
+¯\\\_(ツ)\_/¯
