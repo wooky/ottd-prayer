@@ -1,7 +1,8 @@
 import asyncio
 import logging
-import dacite
 import sys
+
+import dacite
 import yaml
 
 from src.bot_structures import RemoteServer
@@ -22,15 +23,15 @@ async def main(filename: str) -> None:
 
     if config.server.server_host is not None:
         remote_server = RemoteServer(
-            config.server.server_host, config.server.server_port)
+            config.server.server_host, config.server.server_port
+        )
     else:
         ip_finder = await run_client(
             loop,
-            RemoteServer(config.ottd.coordinator_host,
-                         config.ottd.coordinator_port),
+            RemoteServer(config.ottd.coordinator_host, config.ottd.coordinator_port),
             IpFinder(config),
             CoordinatorProtocol,
-            IpFinder.set_protocol_and_query
+            IpFinder.set_protocol_and_query,
         )
         if ip_finder.remote_server is None:
             raise Exception("Remote server was not set")
@@ -38,7 +39,8 @@ async def main(filename: str) -> None:
 
     await connect_to_server(config, loop, remote_server)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage:", sys.argv[0], "[config file]")
         sys.exit(1)

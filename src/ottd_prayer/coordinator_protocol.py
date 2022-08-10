@@ -59,8 +59,7 @@ class CoordinatorProtocol(TCPProtocol):
 
     @data_producer
     def send_PACKET_COORDINATOR_CLIENT_CONNECT(self, invite_code: str) -> bytearray:
-        data = write_init(
-            PacketCoordinatorType.PACKET_COORDINATOR_CLIENT_CONNECT)
+        data = write_init(PacketCoordinatorType.PACKET_COORDINATOR_CLIENT_CONNECT)
         write_uint8(data, NETWORK_COORDINATOR_VERSION)
         write_string(data, invite_code)
         return data

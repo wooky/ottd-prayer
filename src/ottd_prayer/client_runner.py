@@ -1,11 +1,12 @@
 from asyncio import AbstractEventLoop, CancelledError
-from openttd_protocol.wire.tcp import TCPProtocol
 from typing import Any, Callable, Coroutine, TypeVar
+
+from openttd_protocol.wire.tcp import TCPProtocol
+
 from .bot_structures import RemoteServer
 
-
-App = TypeVar('App')
-Protocol = TypeVar('Protocol', bound=TCPProtocol)
+App = TypeVar("App")
+Protocol = TypeVar("Protocol", bound=TCPProtocol)
 
 
 async def run_client(
@@ -13,9 +14,11 @@ async def run_client(
     remote_server: RemoteServer,
     app: App,
     protocol_constructor: Callable[[App], Protocol],
-    app_initializer: Callable[[App, Protocol], Coroutine[Any, Any, None]]
+    app_initializer: Callable[[App, Protocol], Coroutine[Any, Any, None]],
 ) -> App:
-    transport, protocol = await loop.create_connection(lambda: protocol_constructor(app), remote_server.host, remote_server.port)
+    transport, protocol = await loop.create_connection(
+        lambda: protocol_constructor(app), remote_server.host, remote_server.port
+    )
 
     await app_initializer(app, protocol)
     try:

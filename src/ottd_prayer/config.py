@@ -15,11 +15,9 @@ class Server:
 
     def __post_init__(self) -> None:
         if (self.server_host == None) == (self.invite_code == None):
-            raise ValueError(
-                "Only one of [server_host, invite_code] must be set")
+            raise ValueError("Only one of [server_host, invite_code] must be set")
         if (self.company_id == None) == (self.company_name == None):
-            raise ValueError(
-                "Only one of [company_id, company_name] must be set")
+            raise ValueError("Only one of [company_id, company_name] must be set")
         if self.company_id != None and not 1 <= cast(int, self.company_id) <= 15:
             raise ValueError("company_id must be between 1 and 15")
 
@@ -57,7 +55,8 @@ class Ottd:
     def __post_init__(self) -> None:
         if (self.revision_major == None) != (self.revision_minor == None):
             raise ValueError(
-                "revision_major & revision_minor must either both be set or both be unset")
+                "revision_major & revision_minor must either both be set or both be unset"
+            )
 
 
 @dataclass

@@ -1,11 +1,24 @@
 import enum
-from openttd_protocol.wire.exceptions import PacketTooShort
-from openttd_protocol.wire.read import read_uint8, read_uint16, read_uint32, read_uint64, read_string, read_bytes
-from openttd_protocol.wire.tcp import TCPProtocol
-from openttd_protocol.wire.write import write_init, write_uint8, write_uint32, write_string
 
-from .decorators import Receive, data_consumer, data_producer
+from openttd_protocol.wire.exceptions import PacketTooShort
+from openttd_protocol.wire.read import (
+    read_bytes,
+    read_string,
+    read_uint8,
+    read_uint16,
+    read_uint32,
+    read_uint64,
+)
+from openttd_protocol.wire.tcp import TCPProtocol
+from openttd_protocol.wire.write import (
+    write_init,
+    write_string,
+    write_uint8,
+    write_uint32,
+)
+
 from .bot_structures import PlayerMovement, ServerError, ServerFrame, ServerProperties
+from .decorators import Receive, data_consumer, data_producer
 
 
 class PacketGameType(enum.IntEnum):
@@ -105,7 +118,12 @@ class GameProtocol(TCPProtocol):
         game_seed, data = read_uint32(data)
         server_id, data = read_string(data)
 
-        return ServerProperties(client_id=client_id, game_seed=game_seed, server_id=server_id).__dict__, data
+        return (
+            ServerProperties(
+                client_id=client_id, game_seed=game_seed, server_id=server_id
+            ).__dict__,
+            data,
+        )
 
     @staticmethod
     @data_consumer
@@ -167,7 +185,14 @@ class GameProtocol(TCPProtocol):
         except PacketTooShort:
             token = None
 
-        return ServerFrame(frame_counter_server=frame_counter_server, frame_counter_max=frame_counter_max, token=token).__dict__, data
+        return (
+            ServerFrame(
+                frame_counter_server=frame_counter_server,
+                frame_counter_max=frame_counter_max,
+                token=token,
+            ).__dict__,
+            data,
+        )
 
     @staticmethod
     @data_consumer
@@ -258,7 +283,9 @@ class GameProtocol(TCPProtocol):
     ### SENDERS ###
 
     @data_producer
-    def send_PACKET_CLIENT_JOIN(self, network_revision: str, newgrf_version: int, client_name: str, playas: int) -> bytearray:
+    def send_PACKET_CLIENT_JOIN(
+        self, network_revision: str, newgrf_version: int, client_name: str, playas: int
+    ) -> bytearray:
         data = write_init(PacketGameType.PACKET_CLIENT_JOIN)
         write_string(data, network_revision)
         write_uint32(data, newgrf_version)
@@ -296,7 +323,9 @@ class GameProtocol(TCPProtocol):
         return data
 
     @data_producer
-    def send_PACKET_CLIENT_MOVE(self, company_id: int, hashed_password: str) -> bytearray:
+    def send_PACKET_CLIENT_MOVE(
+        self, company_id: int, hashed_password: str
+    ) -> bytearray:
         data = write_init(PacketGameType.PACKET_CLIENT_MOVE)
         write_uint8(data, company_id)
         write_string(data, hashed_password)

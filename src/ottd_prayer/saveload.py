@@ -1,15 +1,23 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import logging
 import lzma
 import struct
+from dataclasses import dataclass
 from typing import Any
+
 from openttd_protocol.wire.exceptions import PacketTooShort
-from openttd_protocol.wire.read import read_bytes, read_uint8, read_uint16, read_uint32, read_uint64
+from openttd_protocol.wire.read import (
+    read_bytes,
+    read_uint8,
+    read_uint16,
+    read_uint32,
+    read_uint64,
+)
 
 logger = logging.getLogger(__name__)
 LOGLEVEL_TRACE = 5
-SPECIAL_CHUNKS: list[bytes] = [b'AIPL', b'GSDT']
+SPECIAL_CHUNKS: list[bytes] = [b"AIPL", b"GSDT"]
 
 
 def _trace(msg: str, *args: object) -> None:
@@ -23,7 +31,7 @@ class ChRiff:
     @staticmethod
     def create(type: int, data: memoryview) -> tuple[ChRiff, memoryview]:
         length, data = read_uint24(data)
-        length |= ((type >> 4) << 24)
+        length |= (type >> 4) << 24
         _trace("RIFF size should be %d", length)
         chunk, data = read_bytes(data, length)
         return ChRiff(chunk=chunk), data
@@ -38,7 +46,8 @@ class ChTableReader:
     def __init__(self) -> None:
         self.structs: dict[ChTableReader.StructKey, ChTableReader.Header] = {}
         self.structs_to_process: list[ChTableReader.StructKey] = [
-            ChTableReader.root_struct_key]
+            ChTableReader.root_struct_key
+        ]
         self.special = False
 
     def read_header(self, data: memoryview) -> memoryview:
@@ -53,12 +62,18 @@ class ChTableReader:
             self.structs[key] = header_struct
 
         if len(data) < expected_remaining_size:
-            raise Exception("Table header size mismatch: expected ",
-                            expected_remaining_size, " bytes to remain, got ", len(data))
+            raise Exception(
+                "Table header size mismatch: expected ",
+                expected_remaining_size,
+                " bytes to remain, got ",
+                len(data),
+            )
 
         return data
 
-    def _read_header_struct(self, struct_name: StructKey, data: memoryview) -> tuple[Header, memoryview]:
+    def _read_header_struct(
+        self, struct_name: StructKey, data: memoryview
+    ) -> tuple[Header, memoryview]:
         structs_to_process_idx = 0
         header: ChTableReader.Header = []
         while True:
@@ -68,13 +83,14 @@ class ChTableReader:
 
             key_length, data = gamma(data)
             key_raw, data = read_bytes(data, key_length)
-            key = key_raw.decode('UTF-8')
+            key = key_raw.decode("UTF-8")
             _trace("Read field type %d named %s", field_type, key)
             header.append((field_type, key))
 
             if field_type & 0xF == 11:
                 self.structs_to_process.insert(
-                    structs_to_process_idx, struct_name + (key,))
+                    structs_to_process_idx, struct_name + (key,)
+                )
                 structs_to_process_idx += 1
 
     def read_row(self, row_size: int, data: memoryview) -> tuple[Row, memoryview]:
@@ -87,11 +103,17 @@ class ChTableReader:
         if len(data) != expected_remaining_size and self.special:
             _, data = read_uint8(data)
         if len(data) != expected_remaining_size:
-            raise Exception("Table row size mismatch: expected ",
-                            expected_remaining_size, " bytes to remain, got ", len(data))
+            raise Exception(
+                "Table row size mismatch: expected ",
+                expected_remaining_size,
+                " bytes to remain, got ",
+                len(data),
+            )
         return row, data
 
-    def _read_row_struct(self, struct_name: StructKey, data: memoryview) -> tuple[Row, memoryview]:
+    def _read_row_struct(
+        self, struct_name: StructKey, data: memoryview
+    ) -> tuple[Row, memoryview]:
         row: ChTableReader.Row = {}
         for (field_type, key) in self.structs[struct_name]:
             repeat = 1
@@ -114,11 +136,10 @@ class ChTableReader:
                         _, data = read_uint64(data)
                 case 10:
                     bytes_value, data = read_bytes(data, repeat)
-                    value = bytes_value.decode('UTF-8')
+                    value = bytes_value.decode("UTF-8")
                 case 11:
                     for _ in range(repeat):
-                        _, data = self._read_row_struct(
-                            struct_name + (key,), data)
+                        _, data = self._read_row_struct(struct_name + (key,), data)
                 case _ as x:
                     raise Exception("Unhandled field type ", x)
             row[key] = value
@@ -184,9 +205,9 @@ class SaveloadBuffer:
             raise Exception("Unsupported version ", version)
 
         match compression:
-            case b'OTTN':
+            case b"OTTN":
                 data = raw_data
-            case b'OTTX':
+            case b"OTTX":
                 decompressed_data = lzma.decompress(raw_data)
                 data = memoryview(decompressed_data)
             case _:
@@ -195,10 +216,11 @@ class SaveloadBuffer:
         chunks: dict[str, Any] = {}
         while True:
             chunk_name, data = read_bytes(data, 4)
-            if chunk_name == b'\x00\x00\x00\x00':
+            if chunk_name == b"\x00\x00\x00\x00":
                 if len(data) != 0:
                     raise Exception(
-                        "Unexpected end of data, still got ", len(data), " bytes to go")
+                        "Unexpected end of data, still got ", len(data), " bytes to go"
+                    )
                 return chunks
 
             _trace("Got header %s", chunk_name)
@@ -208,11 +230,10 @@ class SaveloadBuffer:
                 case 0:
                     chunk, data = ChRiff.create(chunk_type, data)
                 case 3:
-                    chunk, data = ChTable.create(
-                        data, chunk_name in SPECIAL_CHUNKS)
+                    chunk, data = ChTable.create(data, chunk_name in SPECIAL_CHUNKS)
                 case 4:
                     chunk, data = ChSparseTable.create(data)
-            chunks[chunk_name.decode('UTF-8')] = chunk
+            chunks[chunk_name.decode("UTF-8")] = chunk
 
 
 def gamma(data: memoryview) -> tuple[int, memoryview]:
@@ -227,7 +248,7 @@ def gamma(data: memoryview) -> tuple[int, memoryview]:
 
 def read_uint24(data: memoryview) -> tuple[int, memoryview]:
     try:
-        buf = b'\x00' + bytes(data[:3])
+        buf = b"\x00" + bytes(data[:3])
         value = struct.unpack_from(">I", buf, 0)
     except struct.error:
         raise PacketTooShort from None
