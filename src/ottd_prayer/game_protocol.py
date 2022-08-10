@@ -140,10 +140,10 @@ class GameProtocol(TCPProtocol):
     @staticmethod
     @data_consumer
     def receive_PACKET_SERVER_MAP_DATA(data: memoryview) -> Receive:
-        # yeet the data out of the window
+        map_data = data
         data = memoryview(bytes())
 
-        return {}, data
+        return {"map_data": map_data}, data
 
     @staticmethod
     @data_consumer

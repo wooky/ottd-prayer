@@ -8,7 +8,12 @@ from openttd_protocol.wire.exceptions import PacketTooShort
 from openttd_protocol.wire.read import read_bytes, read_uint8, read_uint16, read_uint32, read_uint64
 
 logger = logging.getLogger(__name__)
+LOGLEVEL_TRACE = 5
 SPECIAL_CHUNKS: list[bytes] = [b'AIPL', b'GSDT']
+
+
+def _trace(msg: str, *args: object) -> None:
+    logger.log(LOGLEVEL_TRACE, msg, *args)
 
 
 @dataclass
@@ -19,7 +24,7 @@ class ChRiff:
     def create(type: int, data: memoryview) -> tuple[ChRiff, memoryview]:
         length, data = read_uint24(data)
         length |= ((type >> 4) << 24)
-        logger.debug("RIFF size should be %d", length)
+        _trace("RIFF size should be %d", length)
         chunk, data = read_bytes(data, length)
         return ChRiff(chunk=chunk), data
 
@@ -38,12 +43,12 @@ class ChTableReader:
 
     def read_header(self, data: memoryview) -> memoryview:
         header_size, data = gamma(data)
-        logger.debug("Table header size should be %d", header_size - 1)
+        _trace("Table header size should be %d", header_size - 1)
         expected_remaining_size = len(data) - header_size + 1
 
         while len(self.structs_to_process) != 0:
             key = self.structs_to_process.pop(0)
-            logger.debug("Reading header struct %s", key)
+            _trace("Reading header struct %s", key)
             header_struct, data = self._read_header_struct(key, data)
             self.structs[key] = header_struct
 
@@ -64,7 +69,7 @@ class ChTableReader:
             key_length, data = gamma(data)
             key_raw, data = read_bytes(data, key_length)
             key = key_raw.decode('UTF-8')
-            logger.debug("Read field type %d named %s", field_type, key)
+            _trace("Read field type %d named %s", field_type, key)
             header.append((field_type, key))
 
             if field_type & 0xF == 11:
@@ -73,7 +78,7 @@ class ChTableReader:
                 structs_to_process_idx += 1
 
     def read_row(self, row_size: int, data: memoryview) -> tuple[Row, memoryview]:
-        logger.debug("Table row size should be %d", row_size - 1)
+        _trace("Table row size should be %d", row_size - 1)
         if row_size == 1:
             # This is an array with unallocated data
             return {}, data
@@ -93,7 +98,7 @@ class ChTableReader:
             value = None
             if field_type & 0x10:
                 repeat, data = gamma(data)
-            logger.debug("Reading field '%s' %d time(s)", key, repeat)
+            _trace("Reading field '%s' %d time(s)", key, repeat)
             match field_type & 0xF:
                 case 1 | 2:
                     for _ in range(repeat):
@@ -154,7 +159,7 @@ class ChSparseTable:
                 break
             last_data_len = len(data)
             idx, data = gamma(data)
-            logger.debug("Set table index to %d", idx)
+            _trace("Set table index to %d", idx)
             row_size = total_row_size - last_data_len + len(data)
             row, data = reader.read_row(row_size, data)
             elements[idx] = row
@@ -162,22 +167,16 @@ class ChSparseTable:
 
 
 class SaveloadBuffer:
-    def __init__(self, size: int) -> None:
-        self.buf = bytearray(size)
-        self.idx = 0
+    """TODO use incremental decompression"""
 
-    def append(self, b: bytes) -> None:
-        new_idx = self.idx + len(b)
-        if new_idx > len(self.buf):
-            raise Exception("Too many bytes!")
-        self.buf[self.idx:new_idx] = b
-        self.idx = new_idx
+    def __init__(self) -> None:
+        self.buf: list[int] = []
+
+    def append(self, b: memoryview) -> None:
+        self.buf.extend(b)
 
     def decode(self) -> dict[str, Any]:
-        if self.idx != len(self.buf):
-            raise Exception("File is incomplete: expected ",
-                            len(self.buf), " bytes, got ", self.idx)
-        raw_data = memoryview(self.buf)
+        raw_data = memoryview(bytes(self.buf))
         compression, raw_data = read_bytes(raw_data, 4)
         version, raw_data = read_uint16(raw_data)
         _, raw_data = read_uint16(raw_data)
@@ -202,7 +201,7 @@ class SaveloadBuffer:
                         "Unexpected end of data, still got ", len(data), " bytes to go")
                 return chunks
 
-            logger.debug("Got header %s", chunk_name)
+            _trace("Got header %s", chunk_name)
             chunk_type, data = read_uint8(data)
             chunk: Any
             match chunk_type & 0xF:

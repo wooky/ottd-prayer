@@ -4,6 +4,8 @@ from typing import Any, Optional, cast
 from dacite import from_dict
 from hashlib import md5
 
+from src.saveload import ChTable, SaveloadBuffer
+
 from .bot_structures import ClientId, CompanyId, NetworkErrorCode, PlayerMovement, ServerError, ServerFrame, ServerProperties
 from .config import Config
 from .decorators import app_consumer
@@ -23,7 +25,8 @@ class PrayerBot:
         self.ban_check_task: asyncio.Task[None]
         self.server_properties: ServerProperties
         self.frame_counter: int
-        self.target_company_id: CompanyId = config.server.company_id - 1  # TODO
+        self.target_company_id: Optional[CompanyId] = config.server.company_id - \
+            1 if config.server.company_id is not None else None
         self.company_move_task: Optional[asyncio.Task[None]] = None
         self.was_game_password_sent: bool = False
         self.ready_to_play: bool = False
@@ -32,6 +35,7 @@ class PrayerBot:
         self.token: int = 0
         self.last_ack_frame: int = 0
         self.should_reconnect: bool = config.bot.auto_reconnect
+        self.saveload: Optional[SaveloadBuffer] = None
 
     async def set_protocol_and_join(self, protocol: GameProtocol) -> None:
         logger.debug("Setting protocol")
@@ -122,20 +126,38 @@ class PrayerBot:
     @app_consumer(logger)
     async def receive_PACKET_SERVER_MAP_BEGIN(self, frame: int) -> None:
         self.frame_counter = frame
+        if self.target_company_id is None:
+            self.saveload = SaveloadBuffer()
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_MAP_SIZE(self) -> None:
         pass
 
     @app_consumer(logger)
-    async def receive_PACKET_SERVER_MAP_DATA(self) -> None:
-        pass
+    async def receive_PACKET_SERVER_MAP_DATA(self, map_data: memoryview) -> None:
+        if self.saveload is not None:
+            logger.debug("Appending %d bytes of map data", len(map_data))
+            self.saveload.append(map_data)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_MAP_DONE(self) -> None:
+        if self.saveload is not None:
+            chunks = self.saveload.decode()
+            plyr = chunks['PLYR']
+            assert(isinstance(plyr, ChTable))
+            target_company_id = next((i for i, v in enumerate(
+                plyr.elements) if 'name' in v and v['name'] == self.config.server.company_name), None)
+            if target_company_id is None:
+                logger.error("Cannot find specified company")
+                self._reconnect_if(
+                    self.config.bot.auto_reconnect_if_company_not_found)
+                return
+            self.target_company_id = target_company_id
+            logger.debug("Setting target company ID to %d",
+                         target_company_id + 1)
+            self.saveload = None  # no longer needed
         self.ready_to_play = True
         await self.protocol.send_PACKET_CLIENT_MAP_OK()
-        # await self._try_joining_company()
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_JOIN(self) -> None:
@@ -266,7 +288,7 @@ class PrayerBot:
                     self.company_move_task.cancel()
                     self.company_move_task = None
             elif (self.company_move_task is None or self.company_move_task.done()) and (not self.config.bot.spectate_if_alone or len(self.other_clients_playing) > 0):
-                await self.protocol.send_PACKET_CLIENT_MOVE(self.target_company_id, self._company_password_hash())
+                await self.protocol.send_PACKET_CLIENT_MOVE(cast(int, self.target_company_id), self._company_password_hash())
                 self.company_move_task = asyncio.create_task(
                     self._wait_for_move_or_disconnect())
 

@@ -1,8 +1,5 @@
 from dataclasses import dataclass
-import logging
-from typing import Optional
-
-logger = logging.getLogger(__name__)
+from typing import Optional, cast
 
 
 @dataclass
@@ -10,7 +7,7 @@ class Server:
     server_host: Optional[str]
     invite_code: Optional[str]
     player_name: str
-    company_id: int
+    company_id: Optional[int]
     company_name: Optional[str]
     server_port: int
     server_password: Optional[str]
@@ -20,10 +17,11 @@ class Server:
         if (self.server_host == None) == (self.invite_code == None):
             raise ValueError(
                 "Only one of [server_host, invite_code] must be set")
-        if not 1 <= self.company_id <= 15:
+        if (self.company_id == None) == (self.company_name == None):
+            raise ValueError(
+                "Only one of [company_id, company_name] must be set")
+        if self.company_id != None and not 1 <= cast(int, self.company_id) <= 15:
             raise ValueError("company_id must be between 1 and 15")
-        if self.company_name is not None:
-            logger.warning("company_name is not implemented")
 
 
 @dataclass
@@ -33,6 +31,7 @@ class Bot:
     auto_reconnect_wait: int
     reconnect_count: int
     auto_reconnect_if_wrong_game_password: bool
+    auto_reconnect_if_company_not_found: bool
     auto_reconnect_if_cannot_move: bool
     auto_reconnect_if_shutdown: bool
     auto_reconnect_if_banned: bool
