@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - master
+    paths:
+     - '**.py'
+     - 'mypy.ini'
+     - 'pyproject.toml'
+     - '.github/workflows/ci.yml'
+  pull_request:
 jobs:
   ci:
     runs-on: ubuntu-latest

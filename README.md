@@ -48,7 +48,7 @@ pip install -e .[dev]
 
 (note: on Windows, the activate script is called with `.venv\Scripts\activate.bat`)
 
-To run the script when in the virtual environment, simply call `ottd-prayer`.
+To run the script when in the virtual environment, simply call `ottd-prayer` or `python main.py`.
 
 ### Maintaining Code Quality
 
