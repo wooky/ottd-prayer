@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
 
 @dataclass
@@ -34,7 +34,8 @@ class Bot:
     auto_reconnect_if_shutdown: bool
     auto_reconnect_if_banned: bool
     auto_reconnect_if_restarting: bool
-    log_level: str
+    log_level: Union[str, int]
+    saveload_dump_file: Optional[str]
 
     def __post_init__(self) -> None:
         if self.auto_reconnect_wait <= 0:

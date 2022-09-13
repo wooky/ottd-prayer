@@ -171,14 +171,18 @@ class PrayerBot:
     @app_consumer(logger)
     async def receive_PACKET_SERVER_MAP_DONE(self) -> None:
         if self.saveload is not None:
+            if self.config.bot.saveload_dump_file:
+                with open(self.config.bot.saveload_dump_file, "wb") as f:
+                    f.write(self.saveload.to_bytes())
             chunks = self.saveload.decode()
             plyr = chunks["PLYR"]
             assert isinstance(plyr, ChTable)
+            company_name = cast(str, self.config.server.company_name).encode("UTF-8")
             target_company_id = next(
                 (
                     i
                     for i, v in enumerate(plyr.elements)
-                    if "name" in v and v["name"] == self.config.server.company_name
+                    if "name" in v and v["name"] == company_name
                 ),
                 None,
             )

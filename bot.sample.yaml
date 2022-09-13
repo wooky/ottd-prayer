@@ -43,7 +43,11 @@ bot:
   auto_reconnect_if_restarting: false
 
   # Bot log level. See https://docs.python.org/3/library/logging.html#levels for levels.
+  # Use level 5 for TRACE level.
   log_level: INFO
+
+  # Save a copy of the downloaded saveload file. Primarily used for debugging.
+  saveload_dump_file:
 
 ottd:
   network_revision: "12.2"

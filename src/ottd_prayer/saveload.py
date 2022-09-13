@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import lzma
 import struct
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,6 +19,7 @@ from openttd_protocol.wire.read import (
 logger = logging.getLogger(__name__)
 LOGLEVEL_TRACE = 5
 SPECIAL_CHUNKS: list[bytes] = [b"AIPL", b"GSDT"]
+MIN_SAVELOAD_VERSION = 296
 
 
 def _trace(msg: str, *args: object) -> None:
@@ -101,7 +103,10 @@ class ChTableReader:
         expected_remaining_size = len(data) - row_size + 1
         row, data = self._read_row_struct(ChTableReader.root_struct_key, data)
         if len(data) != expected_remaining_size and self.special:
-            _, data = read_uint8(data)
+            has_script_data, data = read_uint8(data)
+            if has_script_data != 0:
+                _trace("Reading script data")
+                _, data = self._read_script_data(data)
         if len(data) != expected_remaining_size:
             raise Exception(
                 "Table row size mismatch: expected ",
@@ -135,8 +140,7 @@ class ChTableReader:
                     for _ in range(repeat):
                         _, data = read_uint64(data)
                 case 10:
-                    bytes_value, data = read_bytes(data, repeat)
-                    value = bytes_value.decode("UTF-8")
+                    value, data = read_bytes(data, repeat)
                 case 11:
                     for _ in range(repeat):
                         _, data = self._read_row_struct(struct_name + (key,), data)
@@ -144,6 +148,42 @@ class ChTableReader:
                     raise Exception("Unhandled field type ", x)
             row[key] = value
         return row, data
+
+    def _read_script_data(self, data: memoryview) -> tuple[None, memoryview]:
+        field_type, data = read_uint8(data)
+        _trace("Reading SQSL field type %d", field_type)
+        match field_type:
+            case 0:
+                _, data = read_uint64(data)
+            case 1:
+                size, data = read_uint8(data)
+                _, data = read_bytes(data, size)
+            case 2:
+                marker, post_marker_data = read_uint8(data)
+                while marker != 0xFF:
+                    _trace("Reading SQSL array element")
+                    _, data = self._read_script_data(data)
+                    marker, post_marker_data = read_uint8(data)
+                _trace("No more SQSL array elements")
+                data = post_marker_data
+            case 3:
+                marker, post_marker_data = read_uint8(data)
+                while marker != 0xFF:
+                    _trace("Reading SQSL table key")
+                    _, data = self._read_script_data(data)
+                    _trace("Reading SQSL table value")
+                    _, data = self._read_script_data(data)
+                    marker, post_marker_data = read_uint8(data)
+                _trace("No more SQSL table elements")
+                data = post_marker_data
+            case 4:
+                _, data = read_uint8(data)
+            case 5:
+                pass
+            case _ as x:
+                raise Exception("Unhandled SQSL field type", x)
+
+        return (None, data)
 
 
 @dataclass
@@ -196,12 +236,15 @@ class SaveloadBuffer:
     def append(self, b: memoryview) -> None:
         self.buf.extend(b)
 
+    def to_bytes(self) -> bytes:
+        return bytes(self.buf)
+
     def decode(self) -> dict[str, Any]:
-        raw_data = memoryview(bytes(self.buf))
+        raw_data = memoryview(self.to_bytes())
         compression, raw_data = read_bytes(raw_data, 4)
         version, raw_data = read_uint16(raw_data)
         _, raw_data = read_uint16(raw_data)
-        if version < 295:
+        if version < MIN_SAVELOAD_VERSION:
             raise Exception("Unsupported version ", version)
 
         match compression:
@@ -242,7 +285,7 @@ def gamma(data: memoryview) -> tuple[int, memoryview]:
     while res & mask != 0:
         next_byte, data = read_uint8(data)
         res = ((res & ~mask) << 8) | next_byte
-        mask <<= 8
+        mask <<= 7
     return res, data
 
 
@@ -253,3 +296,11 @@ def read_uint24(data: memoryview) -> tuple[int, memoryview]:
     except struct.error:
         raise PacketTooShort from None
     return value[0], data[3:]
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=LOGLEVEL_TRACE)
+    saveload = SaveloadBuffer()
+    with open(sys.argv[1], "rb") as f:
+        saveload.append(memoryview(f.read()))
+    saveload.decode()
