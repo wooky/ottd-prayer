@@ -1,9 +1,7 @@
 import asyncio
 import logging
 import sys
-
-import dacite
-import yaml
+from typing import cast
 
 from .bot_structures import RemoteServer
 from .client_runner import run_client
@@ -14,8 +12,7 @@ from .server_connector import connect_to_server
 
 
 async def main_async(filename: str) -> None:
-    with open(filename) as f:
-        config = dacite.from_dict(data_class=Config, data=yaml.safe_load(f))
+    config = cast(Config, Config.from_yaml_file(filename))
 
     logging.basicConfig(level=config.bot.log_level)
 

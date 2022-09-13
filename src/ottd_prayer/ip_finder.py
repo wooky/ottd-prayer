@@ -1,8 +1,6 @@
 import logging
 from typing import Any, Optional, cast
 
-from dacite import from_dict
-
 from .bot_structures import RemoteServer, ServerError
 from .config import Config
 from .coordinator_protocol import CoordinatorProtocol
@@ -31,7 +29,7 @@ class IpFinder:
     async def receive_PACKET_COORDINATOR_GC_ERROR(
         self, **kwargs: dict[str, Any]
     ) -> None:
-        server_error = from_dict(data_class=ServerError, data=kwargs)
+        server_error: ServerError = ServerError.from_dict(kwargs)
         logger.error(
             "Received server error %d: %s",
             server_error.error_code,
@@ -51,7 +49,7 @@ class IpFinder:
     async def receive_PACKET_COORDINATOR_GC_DIRECT_CONNECT(
         self, **kwargs: dict[str, Any]
     ) -> None:
-        self.remote_server = from_dict(data_class=RemoteServer, data=kwargs)
+        self.remote_server = RemoteServer.from_dict(kwargs)
 
         self.protocol.task.cancel()
 

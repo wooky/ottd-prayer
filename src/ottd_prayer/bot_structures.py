@@ -2,6 +2,8 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
+from dataclass_wizard import JSONSerializable
+
 ClientId = int
 CompanyId = int
 
@@ -32,32 +34,32 @@ class NetworkErrorCode(enum.IntEnum):
 
 
 @dataclass
-class ServerError:
+class ServerError(JSONSerializable):
     error_code: int
     error_str: str
 
 
 @dataclass
-class ServerProperties:
+class ServerProperties(JSONSerializable):
     client_id: ClientId
     game_seed: int
     server_id: str
 
 
 @dataclass
-class PlayerMovement:
+class PlayerMovement(JSONSerializable):
     client_id: ClientId
     company_id: CompanyId
 
 
 @dataclass
-class ServerFrame:
+class ServerFrame(JSONSerializable):
     frame_counter_server: int
     frame_counter_max: int
     token: Optional[int]
 
 
 @dataclass
-class RemoteServer:
+class RemoteServer(JSONSerializable):
     host: str
     port: int

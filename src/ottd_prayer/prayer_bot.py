@@ -3,8 +3,6 @@ import logging
 from hashlib import md5
 from typing import Any, Optional, cast
 
-from dacite import from_dict
-
 from .bot_structures import (
     ClientId,
     CompanyId,
@@ -99,7 +97,7 @@ class PrayerBot:
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_ERROR(self, **kwargs: dict[str, Any]) -> None:
-        server_error = from_dict(data_class=ServerError, data=kwargs)
+        server_error: ServerError = ServerError.from_dict(kwargs)
         if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
             error_code_str = str(NetworkErrorCode(server_error.error_code))
         else:
@@ -136,13 +134,13 @@ class PrayerBot:
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_WELCOME(self, **kwargs: dict[str, Any]) -> None:
-        self.server_properties = from_dict(data_class=ServerProperties, data=kwargs)
+        self.server_properties = ServerProperties.from_dict(kwargs)
 
         await self.protocol.send_PACKET_CLIENT_GETMAP()
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_CLIENT_INFO(self, **kwargs: dict[str, Any]) -> None:
-        player_movement = from_dict(data_class=PlayerMovement, data=kwargs)
+        player_movement: PlayerMovement = PlayerMovement.from_dict(kwargs)
 
         await self._do_player_movement(
             player_movement.client_id, player_movement.company_id
@@ -202,7 +200,7 @@ class PrayerBot:
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_FRAME(self, **kwargs: dict[str, Any]) -> None:
-        server_frame = from_dict(data_class=ServerFrame, data=kwargs)
+        server_frame: ServerFrame = ServerFrame.from_dict(kwargs)
 
         if server_frame.token != None:
             assert server_frame.token is not None
@@ -235,7 +233,7 @@ class PrayerBot:
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_MOVE(self, **kwargs: dict[str, Any]) -> None:
-        player_movement = from_dict(data_class=PlayerMovement, data=kwargs)
+        player_movement: PlayerMovement = PlayerMovement.from_dict(kwargs)
 
         await self._do_player_movement(
             player_movement.client_id, player_movement.company_id

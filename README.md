@@ -60,7 +60,7 @@ To run the script when in the virtual environment, simply call `ottd-prayer` or 
 This project uses linting and strict type checking to maintain code quality. First, you'll need to generate types for some dependencies:
 
 ```bash
-stubgen -p dacite -p openttd_protocol
+stubgen -p dataclass_wizard -p openttd_protocol
 ```
 
 Run these commands often to ensure good code quality:

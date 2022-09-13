@@ -21,7 +21,7 @@ class CoordinatorProtocol(TCPProtocol):
         error_code, data = read_uint8(data)
         error_str, data = read_string(data)
 
-        return ServerError(error_code=error_code, error_str=error_str).__dict__, data
+        return ServerError(error_code=error_code, error_str=error_str).to_dict(), data
 
     @staticmethod
     @data_consumer
@@ -46,7 +46,7 @@ class CoordinatorProtocol(TCPProtocol):
         host, data = read_string(data)
         port, data = read_uint16(data)
 
-        return RemoteServer(host=host, port=port).__dict__, data
+        return RemoteServer(host=host, port=port).to_dict(), data
 
     @staticmethod
     @data_consumer

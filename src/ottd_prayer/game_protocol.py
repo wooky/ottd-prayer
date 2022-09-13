@@ -96,7 +96,7 @@ class GameProtocol(TCPProtocol):
         except PacketTooShort:
             error_str = "no details provided"
 
-        return ServerError(error_code=error_code, error_str=error_str).__dict__, data
+        return ServerError(error_code=error_code, error_str=error_str).to_dict(), data
 
     @staticmethod
     @data_consumer
@@ -121,7 +121,7 @@ class GameProtocol(TCPProtocol):
         return (
             ServerProperties(
                 client_id=client_id, game_seed=game_seed, server_id=server_id
-            ).__dict__,
+            ).to_dict(),
             data,
         )
 
@@ -132,7 +132,7 @@ class GameProtocol(TCPProtocol):
         playas, data = read_uint8(data)
         _, data = read_string(data)  # name
 
-        return PlayerMovement(client_id=client_id, company_id=playas).__dict__, data
+        return PlayerMovement(client_id=client_id, company_id=playas).to_dict(), data
 
     @staticmethod
     @data_consumer
@@ -190,7 +190,7 @@ class GameProtocol(TCPProtocol):
                 frame_counter_server=frame_counter_server,
                 frame_counter_max=frame_counter_max,
                 token=token,
-            ).__dict__,
+            ).to_dict(),
             data,
         )
 
@@ -237,7 +237,10 @@ class GameProtocol(TCPProtocol):
         client_id, data = read_uint32(data)  # client ID
         company_id, data = read_uint8(data)  # company ID
 
-        return PlayerMovement(client_id=client_id, company_id=company_id).__dict__, data
+        return (
+            PlayerMovement(client_id=client_id, company_id=company_id).to_dict(),
+            data,
+        )
 
     @staticmethod
     @data_consumer

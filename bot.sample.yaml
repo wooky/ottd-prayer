@@ -4,55 +4,54 @@ server:
   player_name: # REQUIRED
   company_id: # either this or company_name is REQUIRED
   company_name: # either this or company_id is REQUIRED
-  server_port: 3979
+  server_port: # default: 3979
   server_password: # default: unset
   company_password: # default: unset
 
 bot:
   # Go into spectator mode if the bot is the only player currently playing.
   # This is useful if you'd like the game to be paused when nobody is playing.
-  spectate_if_alone: true
+  spectate_if_alone: # default: true
 
   # Connect back to the server if connection is lost or bot got kicked.
-  auto_reconnect: true
+  auto_reconnect: # default: true
 
   # How long to wait before reconnecting. Applicable only if auto_reconnect is set.
-  auto_reconnect_wait: 30
+  auto_reconnect_wait: # default: 30
 
   # How many times to try to reconnect before giving up and exiting.
-  reconnect_count: 3
+  reconnect_count: # default: 3
 
   # Should the bot reconnect if the game password is incorrect?
-  auto_reconnect_if_wrong_game_password: false
+  auto_reconnect_if_wrong_game_password: # default: false
 
   # Should the bot reconnect if the company name does not exist?
-  auto_reconnect_if_company_not_found: false
+  auto_reconnect_if_company_not_found: # default: false
 
   # Should the bot reconnect if it can't move to the specified company?
   # This can happen if the company does not exist, or password is incorrect.
-  auto_reconnect_if_cannot_move: false
+  auto_reconnect_if_cannot_move: # default: false
 
   # Should the bot reconnect if the server is shutting down?
-  auto_reconnect_if_shutdown: false
+  auto_reconnect_if_shutdown: # default: false
 
   # Should the bot reconnect if the bot got banned?
-  auto_reconnect_if_banned: false
+  auto_reconnect_if_banned: # default: false
 
   # Should the bot reconnect if the server is restarting?
   # Note that after restart, the company will, most likely, no longer exist.
-  auto_reconnect_if_restarting: false
+  auto_reconnect_if_restarting: # default: false
 
   # Bot log level. See https://docs.python.org/3/library/logging.html#levels for levels.
   # Use level 5 for TRACE level.
-  log_level: INFO
-
-  # Save a copy of the downloaded saveload file. Primarily used for debugging.
-  saveload_dump_file:
+  log_level: # default: INFO
 
 ottd:
+  # Server version
   network_revision: "12.2"
-  revision_major: # default: derived from network_revision
-  revision_minor: # default: derived from network_revision
-  revision_stable: true
-  coordinator_host: coordinator.openttd.org
-  coordinator_port: 3976
+
+  revision_major:
+  revision_minor:
+  revision_stable:
+  coordinator_host:
+  coordinator_port:
