@@ -29,5 +29,5 @@ jobs:
         isort --check-only src/ottd_prayer
     - name: Type check
       run: |
-        stubgen -p dacite -p openttd_protocol
+        stubgen -p dataclass_wizard -p openttd_protocol
         mypy
