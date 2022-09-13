@@ -12,6 +12,11 @@ from .server_connector import connect_to_server
 
 
 async def main_async(filename: str) -> None:
+    if not sys.warnoptions:
+        import warnings
+
+        warnings.simplefilter("default")
+
     config = cast(Config, Config.from_yaml_file(filename))
 
     logging.basicConfig(level=config.bot.log_level)

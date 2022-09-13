@@ -3,7 +3,7 @@ import logging
 
 from .bot_structures import RemoteServer
 from .client_runner import run_client
-from .config import Config
+from .config import AutoReconnectCondition, Config
 from .game_protocol import GameProtocol
 from .prayer_bot import PrayerBot
 
@@ -32,7 +32,8 @@ async def connect_to_server(
 
             reconnect_count += 1
             if (
-                not config.bot.auto_reconnect
+                not AutoReconnectCondition.CONNECTION_LOST
+                in config.bot.auto_reconnect_if
                 or reconnect_count > config.bot.reconnect_count
             ):
                 raise Exception("Connection to remote server lost")

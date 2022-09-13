@@ -12,7 +12,7 @@ from .bot_structures import (
     ServerFrame,
     ServerProperties,
 )
-from .config import Config
+from .config import AutoReconnectCondition, Config
 from .decorators import app_consumer
 from .game_protocol import GameProtocol
 from .saveload import ChTable, SaveloadBuffer
@@ -43,7 +43,9 @@ class PrayerBot:
         self.other_clients_playing: set[ClientId] = set()
         self.token: int = 0
         self.last_ack_frame: int = 0
-        self.should_reconnect: bool = config.bot.auto_reconnect
+        self.should_reconnect: bool = (
+            AutoReconnectCondition.UNHANDLED in config.bot.auto_reconnect_if
+        )
         self.saveload: Optional[SaveloadBuffer] = None
 
     async def set_protocol_and_join(self, protocol: GameProtocol) -> None:
@@ -88,32 +90,35 @@ class PrayerBot:
     @app_consumer(logger)
     async def receive_PACKET_SERVER_FULL(self) -> None:
         logger.warning("Server is full")
-        self._reconnect_if(self.config.bot.auto_reconnect)
+        self._reconnect_if(AutoReconnectCondition.SERVER_FULL)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_BANNED(self) -> None:
         logger.warning("Bot is banned")
-        self._reconnect_if(self.config.bot.auto_reconnect_if_banned)
+        self._reconnect_if(AutoReconnectCondition.BANNED)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_ERROR(self, **kwargs: dict[str, Any]) -> None:
         server_error: ServerError = ServerError.from_dict(kwargs)
-        if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
-            error_code_str = str(NetworkErrorCode(server_error.error_code))
-        else:
-            error_code_str = "INVALID"
-        logger.error(
-            "Received server error %d (%s): %s",
-            server_error.error_code,
-            error_code_str,
-            server_error.error_str,
-        )
 
         if server_error.error_code == NetworkErrorCode.NETWORK_ERROR_WRONG_PASSWORD:
             logger.error("Incorrect game password")
-            self._reconnect_if(self.config.bot.auto_reconnect_if_wrong_game_password)
+            self._reconnect_if(AutoReconnectCondition.WRONG_GAME_PASSWORD)
+        elif server_error.error_code == NetworkErrorCode.NETWORK_ERROR_KICKED:
+            logger.warn("Bot got kicked")
+            self._reconnect_if(AutoReconnectCondition.KICKED)
         else:
-            self._reconnect_if(self.config.bot.auto_reconnect)
+            if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
+                error_code_str = str(NetworkErrorCode(server_error.error_code))
+            else:
+                error_code_str = "INVALID"
+            logger.error(
+                "Received server error %d (%s): %s",
+                server_error.error_code,
+                error_code_str,
+                server_error.error_str,
+            )
+            self._reconnect_if(AutoReconnectCondition.UNHANDLED)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_CHECK_NEWGRFS(self) -> None:
@@ -124,7 +129,7 @@ class PrayerBot:
         server_password = self.config.server.server_password
         if server_password == None:
             logger.error("Server password was not set")
-            self._reconnect_if(self.config.bot.auto_reconnect_if_wrong_game_password)
+            self._reconnect_if(AutoReconnectCondition.WRONG_GAME_PASSWORD)
             return
         assert (
             server_password is not None
@@ -186,7 +191,7 @@ class PrayerBot:
             )
             if target_company_id is None:
                 logger.error("Cannot find specified company")
-                self._reconnect_if(self.config.bot.auto_reconnect_if_company_not_found)
+                self._reconnect_if(AutoReconnectCondition.COMPANY_NOT_FOUND)
                 return
             self.target_company_id = target_company_id
             logger.debug("Setting target company ID to %d", target_company_id + 1)
@@ -250,12 +255,12 @@ class PrayerBot:
     @app_consumer(logger)
     async def receive_PACKET_SERVER_NEWGAME(self) -> None:
         logger.warning("Server is about to restart")
-        self._reconnect_if(self.config.bot.auto_reconnect_if_restarting)
+        self._reconnect_if(AutoReconnectCondition.SERVER_RESTARTING)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_SHUTDOWN(self) -> None:
         logger.warning("Server is shutting down")
-        self._reconnect_if(self.config.bot.auto_reconnect_if_shutdown)
+        self._reconnect_if(AutoReconnectCondition.SERVER_SHUTTING_DOWN)
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_QUIT(self, client_id: ClientId) -> None:
@@ -271,8 +276,8 @@ class PrayerBot:
 
     ### PRIVATE METHODS ###
 
-    def _reconnect_if(self, condition: bool) -> None:
-        self.should_reconnect = condition
+    def _reconnect_if(self, condition: AutoReconnectCondition) -> None:
+        self.should_reconnect = condition in self.config.bot.auto_reconnect_if
         self.ban_check_task.cancel()
         if self.company_move_task is not None:
             self.company_move_task.cancel()
@@ -346,4 +351,4 @@ class PrayerBot:
         logger.debug("Waiting to confirm if the move was successful")
         await asyncio.sleep(1)
         logger.error("Bot was not moved to the requested company")
-        self._reconnect_if(self.config.bot.auto_reconnect_if_cannot_move)
+        self._reconnect_if(AutoReconnectCondition.CANNOT_MOVE)

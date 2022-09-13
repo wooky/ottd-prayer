@@ -1,57 +1,68 @@
 server:
-  server_host: # either this or invite_code is REQUIRED
-  invite_code: # either this or server_host is REQUIRED
+  # server_host: # either this or invite_code is REQUIRED
+  # invite_code: # either this or server_host is REQUIRED
   player_name: # REQUIRED
-  company_id: # either this or company_name is REQUIRED
-  company_name: # either this or company_id is REQUIRED
-  server_port: # default: 3979
-  server_password: # default: unset
-  company_password: # default: unset
+  # company_id: # either this or company_name is REQUIRED
+  # company_name: # either this or company_id is REQUIRED
+  # server_port: # default: 3979
+  # server_password: # default: unset
+  # company_password: # default: unset
 
 bot:
   # Go into spectator mode if the bot is the only player currently playing.
   # This is useful if you'd like the game to be paused when nobody is playing.
-  spectate_if_alone: # default: true
+  # spectate_if_alone: # default: true
 
-  # Connect back to the server if connection is lost or bot got kicked.
-  auto_reconnect: # default: true
+  # Conditions for reconnecting to the server if something happens to the connection.
+  auto_reconnect_if:
+    # Reconnect if an unhandled error occurs. Probably safe enough to enable.
+    - UNHANDLED
 
-  # How long to wait before reconnecting. Applicable only if auto_reconnect is set.
-  auto_reconnect_wait: # default: 30
+    # Reconnect if connection is lost.
+    - CONNECTION_LOST
+
+    # Reconnect if the bot got kicked.
+    - KICKED
+
+    # Reconnect if the server is full.
+    - SERVER_FULL
+
+    # Reconnect if the game password is incorrect.
+    # - WRONG_GAME_PASSWORD
+
+    # Reconnect if the company name does not exist.
+    # - COMPANY_NOT_FOUND
+
+    # Reconnect if moving to the specified company fails.
+    # This can happen if the company ID (if known) does not exist, or password is incorrect.
+    # - CANNOT_MOVE
+
+    # Reconnect if server is shutting down.
+    # - SERVER_SHUTTING_DOWN
+
+    # Reconnect if bot got banned.
+    # - BANNED
+
+    # Reconnect if server is restarting.
+    # Note that after restart, the company will, most likely, no longer exist.
+    # - SERVER_RESTARTING
+
+  # How long to wait before reconnecting. Applicable only for events set in auto_reconnect_if.
+  # auto_reconnect_wait: # default: 30
 
   # How many times to try to reconnect before giving up and exiting.
-  reconnect_count: # default: 3
-
-  # Should the bot reconnect if the game password is incorrect?
-  auto_reconnect_if_wrong_game_password: # default: false
-
-  # Should the bot reconnect if the company name does not exist?
-  auto_reconnect_if_company_not_found: # default: false
-
-  # Should the bot reconnect if it can't move to the specified company?
-  # This can happen if the company does not exist, or password is incorrect.
-  auto_reconnect_if_cannot_move: # default: false
-
-  # Should the bot reconnect if the server is shutting down?
-  auto_reconnect_if_shutdown: # default: false
-
-  # Should the bot reconnect if the bot got banned?
-  auto_reconnect_if_banned: # default: false
-
-  # Should the bot reconnect if the server is restarting?
-  # Note that after restart, the company will, most likely, no longer exist.
-  auto_reconnect_if_restarting: # default: false
+  # reconnect_count: # default: 3
 
   # Bot log level. See https://docs.python.org/3/library/logging.html#levels for levels.
   # Use level 5 for TRACE level.
-  log_level: # default: INFO
+  # log_level: # default: INFO
 
 ottd:
   # Server version
   network_revision: "12.2"
 
-  revision_major:
-  revision_minor:
-  revision_stable:
-  coordinator_host:
-  coordinator_port:
+  # revision_major:
+  # revision_minor:
+  # revision_stable:
+  # coordinator_host:
+  # coordinator_port:
