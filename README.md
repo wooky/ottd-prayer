@@ -1,5 +1,7 @@
 # ottd-prayer
 
+***Unless specified otherwise, this project is supported and is under active development. Please create a ticket for bug reports or features requests.***
+
 ottd-prayer is a user-configurable AFK bot for the open-source game [OpenTTD](https://www.openttd.org/). Features of this bot include:
 
 * Connecting to servers with direct IPs or invite codes
