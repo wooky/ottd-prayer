@@ -16,8 +16,9 @@ async def run_client(
     protocol_constructor: Callable[[App], Protocol],
     app_initializer: Callable[[App, Protocol], Coroutine[Any, Any, None]],
 ) -> App:
+    host = remote_server.host.removeprefix("[").removesuffix("]")
     transport, protocol = await loop.create_connection(
-        lambda: protocol_constructor(app), remote_server.host, remote_server.port
+        lambda: protocol_constructor(app), host, remote_server.port
     )
 
     await app_initializer(app, protocol)
