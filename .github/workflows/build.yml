@@ -5,9 +5,10 @@ on:
       - master
     paths:
       - '**.py'
+      - 'ottd-prayer.spec'
       - 'pyproject.toml'
-      - 'setup.py'
       - '.github/workflows/build.yml'
+  workflow_dispatch:
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
