@@ -18,10 +18,9 @@ ottd-prayer is a user-configurable AFK bot for the open-source game [OpenTTD](ht
 
 The easiest way to use the bot is to download the pre-compiled binary. To download the binary:
 
- 1. Go to the [Build Binary actions workflow](https://github.com/wooky/ottd-prayer/actions/workflows/build.yml)
- 2. Click on the latest successful build
- 3. At the bottom, download the artifact corresponding to your OS
- 4. Extract and run the executable
+ 1. Go to [Releases](https://github.com/wooky/ottd-prayer/releases)
+ 2. Download the file corresponding to your OS
+ 3. Extract and run the executable
 
 ### Through pip
 
