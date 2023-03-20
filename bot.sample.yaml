@@ -47,6 +47,9 @@ bot:
     # Note that after restart, the company will, most likely, no longer exist.
     # - SERVER_RESTARTING
 
+    # Reconnect if the wrong server revision is used.
+    # - WRONG_REVISION
+
   # How long to wait before reconnecting. Applicable only for events set in auto_reconnect_if.
   # auto_reconnect_wait: # default: 30
 
@@ -59,7 +62,7 @@ bot:
 
 ottd:
   # Server version
-  network_revision: "12.2"
+  network_revision: "13.0"
 
   # revision_major:
   # revision_minor:

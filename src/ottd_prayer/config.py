@@ -38,21 +38,16 @@ class AutoReconnectCondition(Enum):
     SERVER_SHUTTING_DOWN = "SERVER_SHUTTING_DOWN"
     BANNED = "BANNED"
     SERVER_RESTARTING = "SERVER_RESTARTING"
+    WRONG_REVISION = "WRONG_REVISION"
 
 
 @dataclass
 class Bot:
-    spectate_if_alone: bool = False
+    spectate_if_alone: bool = True
     auto_reconnect_if: list[AutoReconnectCondition] = field(default_factory=list)
     auto_reconnect: Optional[bool] = None
     auto_reconnect_wait: int = 30
     reconnect_count: int = 3
-    auto_reconnect_if_wrong_game_password: Optional[bool] = None
-    auto_reconnect_if_company_not_found: Optional[bool] = None
-    auto_reconnect_if_cannot_move: Optional[bool] = None
-    auto_reconnect_if_shutdown: Optional[bool] = None
-    auto_reconnect_if_banned: Optional[bool] = None
-    auto_reconnect_if_restarting: Optional[bool] = None
     log_level: Union[str, int] = "INFO"
     saveload_dump_file: Optional[str] = None
 
@@ -61,73 +56,6 @@ class Bot:
             raise ValueError("auto_reconnect_wait must be greater than 0")
         if self.reconnect_count <= 0:
             raise ValueError("reconnect_count must be greater than 0")
-
-        if self.auto_reconnect is not None:
-            warn(
-                "Setting bot.auto_reconnect is deprecated and will be removed, replaced by bot.auto_reconnect_if with values UNHANDLED, CONNECTION_LOST, KICKED",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect == True:
-                self.auto_reconnect_if.extend(
-                    [
-                        AutoReconnectCondition.UNHANDLED,
-                        AutoReconnectCondition.KICKED,
-                        AutoReconnectCondition.CONNECTION_LOST,
-                    ]
-                )
-        if self.auto_reconnect_if_wrong_game_password is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_wrong_game_password is deprecated and will be removed, replaced by bot.auto_reconnect_if with value WRONG_GAME_PASSWORD",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_wrong_game_password == True:
-                self.auto_reconnect_if.append(
-                    AutoReconnectCondition.WRONG_GAME_PASSWORD
-                )
-        if self.auto_reconnect_if_company_not_found is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_company_not_found is deprecated and will be removed, replaced by bot.auto_reconnect_if with value COMPANY_NOT_FOUND",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_company_not_found == True:
-                self.auto_reconnect_if.append(AutoReconnectCondition.COMPANY_NOT_FOUND)
-        if self.auto_reconnect_if_cannot_move is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_cannot_move is deprecated and will be removed, replaced by bot.auto_reconnect_if with value CANNOT_MOVE",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_cannot_move == True:
-                self.auto_reconnect_if.append(AutoReconnectCondition.CANNOT_MOVE)
-        if self.auto_reconnect_if_shutdown is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_shutdown is deprecated and will be removed, replaced by bot.auto_reconnect_if with value SERVER_SHUTTING_DOWN",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_shutdown == True:
-                self.auto_reconnect_if.append(
-                    AutoReconnectCondition.SERVER_SHUTTING_DOWN
-                )
-        if self.auto_reconnect_if_banned is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_banned is deprecated and will be removed, replaced by bot.auto_reconnect_if with value BANNED",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_banned == True:
-                self.auto_reconnect_if.append(AutoReconnectCondition.BANNED)
-        if self.auto_reconnect_if_restarting is not None:
-            warn(
-                "Setting bot.auto_reconnect_if_restarting is deprecated and will be removed, replaced by bot.auto_reconnect_if with value SERVER_RESTARTING",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if self.auto_reconnect_if_restarting == True:
-                self.auto_reconnect_if.append(AutoReconnectCondition.SERVER_RESTARTING)
 
         if len(self.auto_reconnect_if) == 0:
             raise ValueError(

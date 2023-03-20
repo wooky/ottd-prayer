@@ -105,8 +105,11 @@ class PrayerBot:
             logger.error("Incorrect game password")
             self._reconnect_if(AutoReconnectCondition.WRONG_GAME_PASSWORD)
         elif server_error.error_code == NetworkErrorCode.NETWORK_ERROR_KICKED:
-            logger.warn("Bot got kicked")
+            logger.warning("Bot got kicked")
             self._reconnect_if(AutoReconnectCondition.KICKED)
+        elif server_error.error_code == NetworkErrorCode.NETWORK_ERROR_WRONG_REVISION:
+            logger.warning("Wrong server revision")
+            self._reconnect_if(AutoReconnectCondition.WRONG_REVISION)
         else:
             if 0 <= server_error.error_code < NetworkErrorCode.NETWORK_ERROR_END:
                 error_code_str = str(NetworkErrorCode(server_error.error_code))
