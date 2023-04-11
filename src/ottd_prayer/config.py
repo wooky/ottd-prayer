@@ -19,15 +19,14 @@ class Server:
 
     def __post_init__(self) -> None:
         if (self.server_host == None) == (self.invite_code == None):
-            raise ValueError("Only one of [server_host, invite_code] must be set")
+            raise ValueError("Exactly one of [server_host, invite_code] must be set")
         if (self.company_id == None) == (self.company_name == None):
-            raise ValueError("Only one of [company_id, company_name] must be set")
+            raise ValueError("Exactly one of [company_id, company_name] must be set")
         if self.company_id != None and not 1 <= cast(int, self.company_id) <= 15:
-            raise ValueError("company_id must be between 1 and 15")
+            raise ValueError("company_id, if set, must be between 1 and 15")
 
 
 class AutoReconnectCondition(Enum):
-    NONE = "NONE"
     UNHANDLED = "UNHANDLED"
     CONNECTION_LOST = "CONNECTION_LOST"
     KICKED = "KICKED"
@@ -56,11 +55,6 @@ class Bot:
             raise ValueError("auto_reconnect_wait must be greater than 0")
         if self.reconnect_count <= 0:
             raise ValueError("reconnect_count must be greater than 0")
-
-        if len(self.auto_reconnect_if) == 0:
-            raise ValueError(
-                "auto_reconnect_if cannot be empty; use special value NONE to never reconnect"
-            )
 
 
 @dataclass

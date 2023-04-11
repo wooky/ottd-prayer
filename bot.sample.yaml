@@ -14,6 +14,8 @@ bot:
   # spectate_if_alone: # default: true
 
   # Conditions for reconnecting to the server if something happens to the connection.
+  # If you do not wish to reconnect, replace the entire block with the line:
+  # auto_reconnect_if: []
   auto_reconnect_if:
     # Reconnect if an unhandled error occurs. Probably safe enough to enable.
     - UNHANDLED
@@ -62,7 +64,7 @@ bot:
 
 ottd:
   # Server version
-  network_revision: "13.0"
+  network_revision: "13.1"
 
   # revision_major:
   # revision_minor:
