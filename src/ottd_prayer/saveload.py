@@ -120,7 +120,7 @@ class ChTableReader:
         self, struct_name: StructKey, data: memoryview
     ) -> tuple[Row, memoryview]:
         row: ChTableReader.Row = {}
-        for (field_type, key) in self.structs[struct_name]:
+        for field_type, key in self.structs[struct_name]:
             repeat = 1
             value = None
             if field_type & 0x10:

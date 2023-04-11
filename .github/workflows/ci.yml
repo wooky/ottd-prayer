@@ -25,7 +25,7 @@ jobs:
         pip install -e .[ci]
     - name: Lint
       run: |
-        black --diff src/ottd_prayer
+        black --check --diff src/ottd_prayer
         isort --check-only src/ottd_prayer
     - name: Type check
       run: |
