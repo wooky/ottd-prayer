@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Union, cast
-from warnings import warn
 
 from dataclass_wizard import YAMLWizard
 
@@ -59,7 +58,7 @@ class Bot:
 
 @dataclass
 class Ottd:
-    network_revision: str
+    network_revision: Optional[str] = None
     revision_major: Optional[int] = None
     revision_minor: Optional[int] = None
     revision_stable: bool = True
@@ -77,4 +76,4 @@ class Ottd:
 class Config(YAMLWizard):
     server: Server
     bot: Bot
-    ottd: Ottd
+    ottd: Ottd = field(default_factory=Ottd)

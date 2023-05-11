@@ -28,8 +28,8 @@ class PacketGameType(enum.IntEnum):
     PACKET_SERVER_ERROR = 3
     # PACKET_CLIENT_UNUSED = 4
     # PACKET_SERVER_UNUSED = 5
-    # PACKET_SERVER_GAME_INFO = 6
-    # PACKET_CLIENT_GAME_INFO = 7
+    PACKET_SERVER_GAME_INFO = 6
+    PACKET_CLIENT_GAME_INFO = 7
     PACKET_SERVER_CHECK_NEWGRFS = 8
     PACKET_CLIENT_NEWGRFS_CHECKED = 9
     PACKET_SERVER_NEED_GAME_PASSWORD = 10
@@ -97,6 +97,41 @@ class GameProtocol(TCPProtocol):
             error_str = "no details provided"
 
         return ServerError(error_code=error_code, error_str=error_str).to_dict(), data
+
+    @staticmethod
+    @data_consumer
+    def receive_PACKET_SERVER_GAME_INFO(data: memoryview) -> Receive:
+        network_game_info_version, data = read_uint8(data)
+        assert network_game_info_version == 6
+        # 6
+        _, data = read_uint8(data)
+        # 5
+        _, data = read_uint32(data)
+        _, data = read_string(data)
+        # 4
+        grf_count, data = read_uint8(data)
+        for i in range(grf_count):
+            _, data = read_string(data)
+        # 3
+        _, data = read_uint32(data)
+        _, data = read_uint32(data)
+        # 2
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+        # 1
+        _, data = read_string(data)
+        server_revision, data = read_string(data)
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+        _, data = read_uint16(data)
+        _, data = read_uint16(data)
+        _, data = read_uint8(data)
+        _, data = read_uint8(data)
+
+        return {"server_revision": server_revision}, data
 
     @staticmethod
     @data_consumer
@@ -295,6 +330,11 @@ class GameProtocol(TCPProtocol):
         write_string(data, client_name)
         write_uint8(data, playas)
         write_uint8(data, 0)  # used to be language
+        return data
+
+    @data_producer
+    def send_PACKET_CLIENT_GAME_INFO(self) -> bytearray:
+        data = write_init(PacketGameType.PACKET_CLIENT_GAME_INFO)
         return data
 
     @data_producer

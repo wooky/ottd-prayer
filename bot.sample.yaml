@@ -62,10 +62,10 @@ bot:
   # Use level 5 for TRACE level.
   # log_level: # default: INFO
 
-ottd:
-  # Server version
-  network_revision: "13.1"
-
+# OpenTTD protocol-related settings
+# To change, first remove the {}
+ottd: {}
+  # network_revision:
   # revision_major:
   # revision_minor:
   # revision_stable:

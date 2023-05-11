@@ -60,30 +60,10 @@ class PrayerBot:
             # bail!
             return
 
-        logger.debug("Joining remote server")
-        if (
-            self.config.ottd.revision_major == None
-            or self.config.ottd.revision_minor == None
-        ):
-            (revision_major, revision_minor) = map(
-                int, self.config.ottd.network_revision.split(".")
-            )
+        if self.config.ottd.network_revision == None:
+            await protocol.send_PACKET_CLIENT_GAME_INFO()
         else:
-            revision_major = cast(int, self.config.ottd.revision_major)
-            revision_minor = cast(int, self.config.ottd.revision_minor)
-        newgrf_version = (
-            (revision_major + 16) << 24
-            | revision_minor << 20
-            | int(self.config.ottd.revision_stable) << 19
-            | 28004
-        )
-
-        await protocol.send_PACKET_CLIENT_JOIN(
-            self.config.ottd.network_revision,
-            newgrf_version,
-            self.config.server.player_name,
-            COMPANY_SPECTATOR,
-        )
+            await self._join_remote_server()
 
     ### CALLED BY TCPPROTOCOL ###
 
@@ -122,6 +102,11 @@ class PrayerBot:
                 server_error.error_str,
             )
             self._reconnect_if(AutoReconnectCondition.UNHANDLED)
+
+    @app_consumer(logger)
+    async def receive_PACKET_SERVER_GAME_INFO(self, server_revision: str) -> None:
+        self.config.ottd.network_revision = server_revision
+        await self._join_remote_server()
 
     @app_consumer(logger)
     async def receive_PACKET_SERVER_CHECK_NEWGRFS(self) -> None:
@@ -278,6 +263,34 @@ class PrayerBot:
         await self._do_player_movement(client_id, COMPANY_SPECTATOR)
 
     ### PRIVATE METHODS ###
+
+    async def _join_remote_server(self) -> None:
+        logger.debug("Joining remote server")
+        assert self.config.ottd.network_revision is not None
+
+        if (
+            self.config.ottd.revision_major == None
+            or self.config.ottd.revision_minor == None
+        ):
+            (revision_major, revision_minor) = map(
+                int, self.config.ottd.network_revision.split(".")
+            )
+        else:
+            revision_major = cast(int, self.config.ottd.revision_major)
+            revision_minor = cast(int, self.config.ottd.revision_minor)
+        newgrf_version = (
+            (revision_major + 16) << 24
+            | revision_minor << 20
+            | int(self.config.ottd.revision_stable) << 19
+            | 28004
+        )
+
+        await self.protocol.send_PACKET_CLIENT_JOIN(
+            self.config.ottd.network_revision,
+            newgrf_version,
+            self.config.server.player_name,
+            COMPANY_SPECTATOR,
+        )
 
     def _reconnect_if(self, condition: AutoReconnectCondition) -> None:
         self.should_reconnect = condition in self.config.bot.auto_reconnect_if
