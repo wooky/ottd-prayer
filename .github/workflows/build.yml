@@ -27,7 +27,7 @@ jobs:
         run: |
           pyinstaller ottd-prayer.spec
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ottd-prayer-ubuntu
           path: dist/ottd-prayer
@@ -49,7 +49,7 @@ jobs:
         run: |
           pyinstaller ottd-prayer.spec
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ottd-prayer-windows
           path: dist/ottd-prayer.exe
@@ -68,7 +68,7 @@ jobs:
           apk add binutils
           pyinstaller ottd-prayer.spec
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ottd-prayer-alpine
           path: dist/ottd-prayer

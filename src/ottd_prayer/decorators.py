@@ -51,7 +51,7 @@ def app_consumer(
         async def wrapper_app_consumer(*args: P.args, **kwargs: P.kwargs) -> None:
             logger.debug("%s: %s", func.__name__, kwargs)
             self = cast(T, args[0])
-            await func(self, **kwargs)
+            await func(self, **kwargs) # type: ignore[call-arg]
 
         return wrapper_app_consumer
 
