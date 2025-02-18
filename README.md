@@ -46,7 +46,7 @@ You will need git, Python 3.10+ and pip installed. Afterwards, the easiest way t
 git clone https://github.com/wooky/ottd-prayer.git
 cd ottd-prayer
 python -m venv .venv
-./.venv/scripts/activate
+source .venv/bin/activate
 pip install -e .[dev]
 ```
 

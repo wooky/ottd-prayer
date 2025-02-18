@@ -13,7 +13,7 @@ Receive = tuple[dict[str, Any], memoryview]
 
 
 def data_consumer(
-    func: Callable[[memoryview], Receive]
+    func: Callable[[memoryview], Receive],
 ) -> Callable[..., dict[str, Any]]:
     def wrapper_data_consumer(source: Source, data: memoryview) -> dict[str, Any]:
         result, data = func(data)
@@ -30,7 +30,7 @@ def data_consumer(
 
 
 def data_producer(
-    func: Callable[P, bytearray]
+    func: Callable[P, bytearray],
 ) -> Callable[P, Coroutine[Any, Any, None]]:
     async def wrapper_data_producer(*args: P.args, **kwargs: P.kwargs) -> None:
         self = cast(TCPProtocol, args[0])
@@ -45,7 +45,7 @@ def app_consumer(
     logger: logging.Logger,
 ) -> Callable[..., Callable[..., Coroutine[Any, Any, None]]]:
     def decorator(
-        func: Callable[Concatenate[T, P], Coroutine[Any, Any, None]]
+        func: Callable[Concatenate[T, P], Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         @wraps(func)
         async def wrapper_app_consumer(*args: P.args, **kwargs: P.kwargs) -> None:

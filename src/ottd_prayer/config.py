@@ -21,8 +21,10 @@ class Server:
             raise ValueError("Exactly one of [server_host, invite_code] must be set")
         if (self.company_id == None) == (self.company_name == None):
             raise ValueError("Exactly one of [company_id, company_name] must be set")
-        if self.company_id != None and not 1 <= cast(int, self.company_id) <= 15:
+        if self.company_id != None and not 1 <= self.company_id <= 15:
             raise ValueError("company_id, if set, must be between 1 and 15")
+        if not self.player_name.strip():
+            raise ValueError("player_name may not be blank")
 
 
 class AutoReconnectCondition(Enum):

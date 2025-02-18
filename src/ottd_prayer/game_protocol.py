@@ -1,4 +1,4 @@
-import enum
+from enum import IntEnum, auto
 
 from openttd_protocol.wire.exceptions import PacketTooShort
 from openttd_protocol.wire.read import (
@@ -21,54 +21,54 @@ from .bot_structures import PlayerMovement, ServerError, ServerFrame, ServerProp
 from .decorators import Receive, data_consumer, data_producer
 
 
-class PacketGameType(enum.IntEnum):
+class PacketGameType(IntEnum):
     PACKET_SERVER_FULL = 0
-    PACKET_SERVER_BANNED = 1
-    PACKET_CLIENT_JOIN = 2
-    PACKET_SERVER_ERROR = 3
-    # PACKET_CLIENT_UNUSED = 4
-    # PACKET_SERVER_UNUSED = 5
-    PACKET_SERVER_GAME_INFO = 6
-    PACKET_CLIENT_GAME_INFO = 7
-    PACKET_SERVER_CHECK_NEWGRFS = 8
-    PACKET_CLIENT_NEWGRFS_CHECKED = 9
-    PACKET_SERVER_NEED_GAME_PASSWORD = 10
-    PACKET_CLIENT_GAME_PASSWORD = 11
-    # PACKET_SERVER_NEED_COMPANY_PASSWORD = 12
-    # PACKET_CLIENT_COMPANY_PASSWORD = 13
-    PACKET_SERVER_WELCOME = 14
-    PACKET_SERVER_CLIENT_INFO = 15
-    PACKET_CLIENT_GETMAP = 16
-    PACKET_SERVER_WAIT = 17
-    PACKET_SERVER_MAP_BEGIN = 18
-    PACKET_SERVER_MAP_SIZE = 19
-    PACKET_SERVER_MAP_DATA = 20
-    PACKET_SERVER_MAP_DONE = 21
-    PACKET_CLIENT_MAP_OK = 22
-    PACKET_SERVER_JOIN = 23
-    PACKET_SERVER_FRAME = 24
-    PACKET_CLIENT_ACK = 25
-    PACKET_SERVER_SYNC = 26
-    # PACKET_CLIENT_COMMAND = 27
-    PACKET_SERVER_COMMAND = 28
-    # PACKET_CLIENT_CHAT = 29
-    PACKET_SERVER_CHAT = 30
-    PACKET_SERVER_EXTERNAL_CHAT = 31
-    # PACKET_CLIENT_RCON = 32
-    # PACKET_SERVER_RCON = 33
-    PACKET_CLIENT_MOVE = 34
-    PACKET_SERVER_MOVE = 35
-    # PACKET_CLIENT_SET_PASSWORD = 36
-    # PACKET_CLIENT_SET_NAME = 37
-    PACKET_SERVER_COMPANY_UPDATE = 38
-    PACKET_SERVER_CONFIG_UPDATE = 39
-    PACKET_SERVER_NEWGAME = 40
-    PACKET_SERVER_SHUTDOWN = 41
-    # PACKET_CLIENT_QUIT = 42
-    PACKET_SERVER_QUIT = 43
-    # PACKET_CLIENT_ERROR = 44
-    PACKET_SERVER_ERROR_QUIT = 45
-    PACKET_END = 46
+    PACKET_SERVER_BANNED = auto()
+    PACKET_CLIENT_JOIN = auto()
+    PACKET_SERVER_ERROR = auto()
+    PACKET_CLIENT_UNUSED = auto()
+    PACKET_SERVER_UNUSED = auto()
+    PACKET_SERVER_GAME_INFO = auto()
+    PACKET_CLIENT_GAME_INFO = auto()
+    PACKET_SERVER_NEWGAME = auto()
+    PACKET_SERVER_SHUTDOWN = auto()
+    PACKET_SERVER_CHECK_NEWGRFS = auto()
+    PACKET_CLIENT_NEWGRFS_CHECKED = auto()
+    PACKET_SERVER_NEED_GAME_PASSWORD = auto()
+    PACKET_CLIENT_GAME_PASSWORD = auto()
+    PACKET_SERVER_NEED_COMPANY_PASSWORD = auto()
+    PACKET_CLIENT_COMPANY_PASSWORD = auto()
+    PACKET_SERVER_WELCOME = auto()
+    PACKET_SERVER_CLIENT_INFO = auto()
+    PACKET_CLIENT_GETMAP = auto()
+    PACKET_SERVER_WAIT = auto()
+    PACKET_SERVER_MAP_BEGIN = auto()
+    PACKET_SERVER_MAP_SIZE = auto()
+    PACKET_SERVER_MAP_DATA = auto()
+    PACKET_SERVER_MAP_DONE = auto()
+    PACKET_CLIENT_MAP_OK = auto()
+    PACKET_SERVER_JOIN = auto()
+    PACKET_SERVER_FRAME = auto()
+    PACKET_CLIENT_ACK = auto()
+    PACKET_SERVER_SYNC = auto()
+    PACKET_CLIENT_COMMAND = auto()
+    PACKET_SERVER_COMMAND = auto()
+    PACKET_CLIENT_CHAT = auto()
+    PACKET_SERVER_CHAT = auto()
+    PACKET_SERVER_EXTERNAL_CHAT = auto()
+    PACKET_CLIENT_RCON = auto()
+    PACKET_SERVER_RCON = auto()
+    PACKET_CLIENT_MOVE = auto()
+    PACKET_SERVER_MOVE = auto()
+    PACKET_CLIENT_SET_PASSWORD = auto()
+    PACKET_CLIENT_SET_NAME = auto()
+    PACKET_SERVER_COMPANY_UPDATE = auto()
+    PACKET_SERVER_CONFIG_UPDATE = auto()
+    PACKET_CLIENT_QUIT = auto()
+    PACKET_SERVER_QUIT = auto()
+    PACKET_CLIENT_ERROR = auto()
+    PACKET_SERVER_ERROR_QUIT = auto()
+    PACKET_END = auto()
 
 
 class GameProtocol(TCPProtocol):
@@ -102,23 +102,32 @@ class GameProtocol(TCPProtocol):
     @data_consumer
     def receive_PACKET_SERVER_GAME_INFO(data: memoryview) -> Receive:
         network_game_info_version, data = read_uint8(data)
-        assert network_game_info_version == 6
-        # 6
-        _, data = read_uint8(data)
-        # 5
-        _, data = read_uint32(data)
-        _, data = read_string(data)
-        # 4
-        grf_count, data = read_uint8(data)
-        for i in range(grf_count):
+        if network_game_info_version > 7:
+            raise Exception("Unhandled game info version ", network_game_info_version)
+        if network_game_info_version < 1:
+            raise Exception(
+                "Game info version must be at least 1, got ", network_game_info_version
+            )
+
+        # From OpenTTD's SerializeNetworkGameInfo
+        if network_game_info_version >= 7:
+            _, data = read_uint64(data)
+        if network_game_info_version >= 6:
+            _, data = read_uint8(data)
+        if network_game_info_version >= 5:
+            _, data = read_uint32(data)
             _, data = read_string(data)
-        # 3
-        _, data = read_uint32(data)
-        _, data = read_uint32(data)
-        # 2
-        _, data = read_uint8(data)
-        _, data = read_uint8(data)
-        _, data = read_uint8(data)
+        if network_game_info_version >= 4:
+            grf_count, data = read_uint8(data)
+            for i in range(grf_count):
+                _, data = read_string(data)
+        if network_game_info_version >= 3:
+            _, data = read_uint32(data)
+            _, data = read_uint32(data)
+        if network_game_info_version >= 2:
+            _, data = read_uint8(data)
+            _, data = read_uint8(data)
+            _, data = read_uint8(data)
         # 1
         _, data = read_string(data)
         server_revision, data = read_string(data)

@@ -272,12 +272,11 @@ class PrayerBot:
             self.config.ottd.revision_major == None
             or self.config.ottd.revision_minor == None
         ):
-            (revision_major, revision_minor) = map(
-                int, self.config.ottd.network_revision.split(".")
-            )
+            revision_major = int(self.config.ottd.network_revision.split(".")[0])
+            revision_minor = 0  # ????
         else:
-            revision_major = cast(int, self.config.ottd.revision_major)
-            revision_minor = cast(int, self.config.ottd.revision_minor)
+            revision_major = self.config.ottd.revision_major
+            revision_minor = self.config.ottd.revision_minor
         newgrf_version = (
             (revision_major + 16) << 24
             | revision_minor << 20
@@ -285,6 +284,11 @@ class PrayerBot:
             | 28004
         )
 
+        logger.debug(
+            "Joining with revision %s NewGRF version %d",
+            self.config.ottd.network_revision,
+            newgrf_version,
+        )
         await self.protocol.send_PACKET_CLIENT_JOIN(
             self.config.ottd.network_revision,
             newgrf_version,
@@ -319,7 +323,7 @@ class PrayerBot:
             salted_password.append(salted_password_char)
 
         checksum = md5(bytes(salted_password)).digest()
-        return checksum.hex()
+        return checksum.hex().upper()
 
     async def _do_player_movement(
         self, client_id: ClientId, company_id: CompanyId
